@@ -9,13 +9,13 @@ nous_auth.json
 **/*secret*
 
 # Runtime/noise
-hermes/logs/
-hermes/cache/
-hermes/audio_cache/
-hermes/browser/
-hermes/tmp/
-hermes/bin/
-hermes/node/
+hermes/**/logs/
+hermes/**/cache/
+hermes/**/audio_cache/
+hermes/**/browser/
+hermes/**/tmp/
+hermes/**/bin/
+hermes/**/node/
 **/*.lock
 **/*.pid
 **/__pycache__/

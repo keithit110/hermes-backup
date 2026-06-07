@@ -1,0 +1,1 @@
+User prefers terse, concise answers when asking direct operational/configuration questions.

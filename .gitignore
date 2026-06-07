@@ -1,0 +1,23 @@
+# Never commit raw credentials / auth material
+.env
+auth.json
+nous_auth.json
+**/.env
+**/auth.json
+**/nous_auth.json
+**/*token*
+**/*secret*
+
+# Runtime/noise
+hermes/logs/
+hermes/cache/
+hermes/audio_cache/
+hermes/browser/
+hermes/tmp/
+hermes/bin/
+hermes/node/
+**/*.lock
+**/*.pid
+**/__pycache__/
+*.pyc
+request_dump_*

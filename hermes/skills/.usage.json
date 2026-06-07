@@ -1,0 +1,28 @@
+{
+  "github-repo-management": {
+    "archived_at": null,
+    "created_at": "2026-06-07T17:55:16.095654+00:00",
+    "created_by": null,
+    "last_patched_at": null,
+    "last_used_at": "2026-06-07T17:55:16.097951+00:00",
+    "last_viewed_at": "2026-06-07T17:55:16.095688+00:00",
+    "patch_count": 0,
+    "pinned": false,
+    "state": "active",
+    "use_count": 1,
+    "view_count": 1
+  },
+  "hermes-agent": {
+    "archived_at": null,
+    "created_at": "2026-06-07T16:38:01.564332+00:00",
+    "created_by": null,
+    "last_patched_at": null,
+    "last_used_at": "2026-06-07T17:55:16.086170+00:00",
+    "last_viewed_at": "2026-06-07T17:55:16.083602+00:00",
+    "patch_count": 0,
+    "pinned": false,
+    "state": "active",
+    "use_count": 3,
+    "view_count": 3
+  }
+}

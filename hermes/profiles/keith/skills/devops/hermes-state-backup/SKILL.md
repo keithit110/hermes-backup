@@ -25,7 +25,7 @@ Use this skill when the user wants Hermes Agent settings, skills, memory, sessio
 
 ## Recommended backup contents
 
-Include:
+Include for the active/default profile and for each named profile under `profiles/<name>/`:
 
 - `SOUL.md`
 - `config.yaml`
@@ -34,6 +34,12 @@ Include:
 - `cron/`
 - `sessions/` excluding request dumps
 - `state.db`
+
+Use a repo layout that makes profile boundaries obvious, for example:
+
+- `hermes/default/` for the root/default profile
+- `hermes/profiles/keith/` for Keith's profile
+- `hermes/profiles/wife/` for a spouse/other user's profile
 
 Exclude:
 
@@ -57,12 +63,14 @@ Exclude:
    - `git ls-files | grep -Ei '(^|/)(\.env|auth\.json|nous_auth\.json|.*token.*|.*secret.*|request_dump_|logs/|cache/|bin/|node/|\.lock$|\.pid$)' || true`
 5. Tell the user to create a private remote repo and set up credentials manually.
 6. For GitHub, recommend a write-enabled deploy key; see `references/github-deploy-key-setup.md`.
-7. After the user adds the remote, verify:
+7. For multi-profile installs, preserve profile boundaries; see `references/profile-aware-backups.md`.
+8. For Keith's current VPS backup layout and session-specific gotchas, see `references/keith-vps-hermes-backup.md`.
+9. After the user adds the remote, verify:
    - `git remote -v`
    - `git push -u origin main`
-8. Install cron only after the remote push works.
-9. Run the backup script manually once after installing cron.
-10. Report exact paths, schedule, latest commit, and push result.
+9. Install cron only after the remote push works.
+10. Run the backup script manually once after installing cron.
+11. Report exact paths, schedule, latest commit, and push result.
 
 ## Cron pattern
 
@@ -81,11 +89,13 @@ HERMES_BACKUP_BRANCH=main
 ## Pitfalls
 
 - Do not claim GitHub is configured before `git remote -v` and `git push` prove it.
+- Do not ask Keith to paste GitHub tokens or credentials in chat; give him VPS-side commands for deploy keys/manual setup instead.
 - If `remote origin already exists`, use `git remote set-url origin <url>` instead of `git remote add origin <url>`.
 - If GitHub says `Repository not found`, check placeholder values, repo owner/name, deploy key write access, and whether the remote URL uses the SSH host alias.
 - Do not commit broad `~/.hermes` snapshots; use whitelist copying.
 - `.gitignore` is not sufficient by itself: it does not remove already-tracked files and does not detect secrets embedded inside allowed files.
 - Existing bundled/hub-installed skills may be large; backing up them is okay if the user wants full recoverability, but call out repo size/privacy tradeoffs.
+- When the user plans separate Hermes profiles for family members, back up all profiles automatically but keep secrets/OAuth/auth files excluded. Mention that Codex/OpenAI credentials are intentionally not backed up.
 
 ## Verification checklist
 

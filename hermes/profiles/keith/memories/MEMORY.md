@@ -1,1 +1,0 @@
-Keith's Hermes backup setup on VPS ffvdgzle.colocrossing.cloud uses local repo /root/hermes-backup with GitHub remote git@github.com-hermes-backup:keithit110/hermes-backup.git. Backup script: /usr/local/bin/hermes-github-backup. Cron file: /etc/cron.d/hermes-github-backup scheduled daily at 00:00 UTC as root.

@@ -104,6 +104,58 @@ Connected to Telegram (polling mode)
 Gateway running with 1 platform(s)
 ```
 
+## Reboot readiness for multiple Telegram profiles
+
+When Keith asks whether Telegram bots/profiles will survive a VPS reboot, verify **systemd enablement**, not just that gateway processes are currently running.
+
+Use:
+
+```bash
+hermes profile list
+systemctl list-unit-files | grep -i hermes || true
+systemctl list-units --type=service --all | grep -i hermes || true
+for s in hermes-gateway-keith.service hermes-gateway-jean.service; do
+  printf '%s: active=%s enabled=%s\n' "$s" "$(systemctl is-active "$s" 2>/dev/null || true)" "$(systemctl is-enabled "$s" 2>/dev/null || true)"
+done
+ls -l /etc/systemd/system/multi-user.target.wants/hermes-gateway-*.service 2>/dev/null || true
+```
+
+A profile gateway is reboot-safe when its profile-specific service is both:
+
+```text
+active=active
+enabled=enabled
+```
+
+and it has a symlink under:
+
+```text
+/etc/systemd/system/multi-user.target.wants/
+```
+
+It is normal for the legacy/default `hermes-gateway.service` to be disabled/inactive when named profile services are used. If it only has a stale failed state, `systemctl reset-failed hermes-gateway.service` is a cleanup step, not a functional fix.
+
+## Session/title management
+
+Telegram `/sessions` may show only a limited recent list and session titles can be stale/misleading after the user changes topics inside the same session. Do not treat a title like `wifey new profile` as proof of the current topic.
+
+Useful commands/patterns:
+
+```text
+/title <clear topic name>
+/new
+/resume <session_id-or-title>
+```
+
+From the VPS CLI, use a high limit for older sessions:
+
+```bash
+hermes -p keith sessions list --limit 1000
+hermes -p keith sessions browse
+```
+
+If a long session ID appears wrapped in terminal output, reconstruct the full ID before claiming it is missing.
+
 ## Verification checklist
 
 Before telling Keith it is fixed:
@@ -111,6 +163,7 @@ Before telling Keith it is fixed:
 - `hermes -p <profile> status` shows a model and provider.
 - `hermes -p <profile> chat -q 'Reply with exactly: OK' --quiet` succeeds.
 - The profile gateway process or service is running.
+- For reboot survival, profile-specific systemd service is `active` and `enabled`.
 - Gateway logs show the correct active profile and Telegram connected.
 
 ## Pitfalls
@@ -118,3 +171,4 @@ Before telling Keith it is fixed:
 - Screenshots or copied commands may contain an em dash `—` instead of two hyphens `--`; correct it before diagnosing deeper.
 - Do not confuse provider auth failure with missing model configuration. The gateway may report it under the auth-failure path even when the real issue is `model: ''`.
 - Do not restart all Hermes gateways if only one profile is broken; restart the profile-specific service.
+- Do not over-trust prompt-time environment hints if live command output contradicts them; verify with real process/config/status checks and correct the record explicitly.

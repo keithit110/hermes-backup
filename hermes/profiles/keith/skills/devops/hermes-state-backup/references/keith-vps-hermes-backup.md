@@ -19,6 +19,7 @@ Session-specific details from Keith's setup. Use as a reference when maintaining
 3. If the user accidentally used placeholder `YOUR_GITHUB_USERNAME`, fix with `git remote set-url origin ...`.
 4. Verify the remote and push before installing/enabling cron.
 5. Keep the backup script profile-aware so future profiles such as `wife` are included automatically under `hermes/profiles/<name>/`.
+6. When running the backup script from inside a profile-scoped Hermes gateway/session, `HERMES_HOME` may be inherited as `/root/.hermes/profiles/<name>`. The live script should normalize that case back to `/root/.hermes`, otherwise a manual run can accidentally rebuild the backup with only the active profile's root state and omit `hermes/profiles/<name>/` directories. Cron already sets `HERMES_HOME=/root/.hermes` explicitly.
 
 ## Sensitive data posture
 

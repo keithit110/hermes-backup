@@ -1,0 +1,169 @@
+---
+name: marketplace-leadgen-webapps
+description: Build Dockerized lead-generation marketplace/directory web apps with SEO pages, admin review workflows, host submissions, and verified deployment.
+version: 1.0.0
+author: Hermes Agent
+license: MIT
+tags: [django, docker, marketplace, lead-generation, seo, admin, web-apps]
+---
+
+# Marketplace Lead-Gen Web Apps
+
+Use this skill when building an MVP directory/marketplace where suppliers list inventory and buyers contact them directly: rental directories, direct-booking sites, local service directories, host/property lead-gen portals, or similar projects.
+
+This is not for a one-page static landing page. Use it when the app needs listings, admin review, forms, photos, SEO pages, Docker deployment, or future host accounts.
+
+## User/style preference for this class of task
+
+For Keith, be direct and no-BS:
+
+- Challenge unrealistic assumptions, especially claims like “SEO ranking is guaranteed” or “no business registration means no tax/legal obligations.”
+- Prefer practical MVP sequencing over polished fantasy architecture.
+- Explain tradeoffs briefly, then build/verify.
+- If the user dislikes a design, iterate with concrete visual improvements and verify with browser screenshots.
+
+## Recommended MVP architecture
+
+For a small marketplace/directory MVP, prefer:
+
+- **Django** for server-rendered SEO pages, forms, built-in admin, media uploads, and fast CRUD.
+- **PostgreSQL** for production-like persistence.
+- **Docker Compose** for app + DB isolation.
+- **Django admin** for first-stage admin-only publishing.
+- **Public host submission form** for suppliers/hosts to submit listings for review.
+- **External contact links** for the earliest version (Messenger/Facebook/WhatsApp/phone), unless a real internal messaging product is explicitly required.
+
+Avoid building a full host dashboard, payment processing, or real-time chat before traffic and inventory are proven.
+
+## Core data model
+
+At minimum:
+
+1. `Host`
+   - name/display name
+   - email/phone
+   - Facebook URL
+   - Messenger URL (`https://m.me/pageusername` when it is a Page)
+   - WhatsApp number
+   - verified flag
+
+2. `Listing`
+   - title/slug
+   - host
+   - area/neighborhood
+   - property/category type
+   - capacity/facts
+   - prices or price ranges
+   - description/short description
+   - nearby landmarks
+   - house rules
+   - amenities many-to-many
+   - featured/published flags
+
+3. `Amenity`
+   - standardized checkbox values; avoid free-text amenity chaos.
+
+4. `ListingPhoto`
+   - uploaded image and/or external URL
+   - caption/sort order
+
+5. `Inquiry`
+   - listing
+   - name/contact
+   - dates/guest count
+   - message
+   - handled flag
+   - **Set `verbose_name_plural = "Inquiries"`**; Django's default would display `Inquirys`.
+
+6. `HostListingSubmission`
+   - mirrors listing fields plus host contact info
+   - status: new/reviewing/approved/rejected
+   - admin notes
+   - amenities checkboxes
+   - optional photo links
+
+## Host access policy
+
+Start with this safer MVP flow:
+
+```text
+host submits property form
+→ admin reviews in Django admin
+→ admin creates/publishes listing
+```
+
+Do not give random hosts broad Django admin access. If host self-service is needed later, build a limited dashboard where a logged-in host can only manage their own listings and where publishing still requires admin approval.
+
+## SEO strategy for local directories
+
+Do not promise rankings. Build pages that can rank over time:
+
+- homepage with clear local positioning
+- listing index
+- listing detail pages with unique descriptions
+- intent landing pages (e.g. airport stays, monthly stays, staycations)
+- sitemap.xml
+- robots.txt
+- semantic titles/meta descriptions
+- fast mobile-first server-rendered pages
+- internal links from guides/landing pages to listings
+
+Target long-tail high-intent pages before broad competitive terms.
+
+## Design expectations
+
+First-pass admin-style UIs often look dated. For public marketplace pages:
+
+- Use a real design system reference when available (Airbnb-like for property marketplaces; dark premium styles when requested). For Keith's accommodation marketplace work, load `popular-web-designs` and the Airbnb template before redesigning.
+- Add a dark-mode toggle when requested and persist it in `localStorage`.
+- Use modern typography, big hero copy, rounded cards, subtle shadows, hover effects, and lightweight page-load animations.
+- If the user says the site feels outdated, clunky, or lacks "pop," treat that as a design-quality failure: redesign the visual hierarchy, CTA structure, hero, card system, and content sections — do not only tweak colors.
+- For mobile marketplace homepages, do not leave core navigation categories only as cards below the hero. Put primary stay/search categories in the top nav via a compact dropdown or hamburger menu. If the hamburger/dropdown already contains those options, do not duplicate the same category cards on the homepage — it creates clutter and confuses the primary guest action.
+- Mobile nav must behave like an app menu: close when the user taps outside, presses Escape, or taps a link. Verify the close behavior after implementing the hamburger menu.
+- For travel/accommodation marketplaces, a clean directory UI can still feel bland. If the user asks for a cinematic/travel feel, make the hero image full-bleed across the top of the page, not trapped inside a rounded card. Overlay the nav and hero copy on the image, add a gradient scrim for legibility, and let the nav become solid/blurred on scroll.
+- Remove fake button-looking decorative pills/chips from the homepage when they are not clickable. Non-clickable elements that look like buttons confuse mobile users; keep only real CTAs such as “Browse stays” and “List your property.”
+- Use scroll and card animations as progressive enhancement: sections can rise/fade in, cards can lift/scale and images can subtly zoom on hover/tap-capable devices, but the content must remain visible without JS and respect `prefers-reduced-motion`.
+- Remove prototype/internal wording before presenting as "production-ready". Avoid labels like "MVP", "directory MVP", or test-ish copy in public hero sections; use customer-facing value propositions instead.
+- Dark-mode toggles should use recognizable icons (prefer inline SVG moon/sun icons) and persist preference in `localStorage`; verify both visual states.
+- Avoid hiding essential content behind JavaScript-only scroll reveal. Progressive enhancement is safer: content visible by default, animation layered on top.
+- Verify visually with browser screenshots, not just `curl`.
+- Check section spacing carefully: page hero/header panels must not touch listing-card grids; keep clear vertical rhythm between boxed sections and cards.
+- Avoid overly tight negative letter-spacing on marketplace headings/cards; if text looks compressed or nearly overlapping, switch to a cleaner font stack and relax tracking.
+- Do not blindly copy Airbnb's coral/pink palette for accommodation sites; if the user dislikes it, pivot to a distinct brand palette (for Cebu Direct Stays: teal/navy/gold feels more ownable and less derivative).
+- Scroll down during verification; do not only inspect the hero section. Sticky nav can obscure content while checking screenshots.
+- See `references/cebu-direct-stays-design-iteration.md` for session-derived design/verification notes from the Cebu Direct Stays MVP.
+
+## Docker deployment checklist
+
+1. Write project under a clear path (e.g. `/root/<project-name>`).
+2. Include:
+   - `Dockerfile`
+   - `docker-compose.yml`
+   - app entrypoint
+   - persistent DB volume
+   - persistent media volume
+   - restart policy
+3. Expose a non-conflicting port for MVP preview (e.g. `8080:8000`).
+4. Add `/health/` endpoint.
+5. Run/rebuild containers.
+6. Verify:
+   - `docker compose ps`
+   - `/health/` returns `ok`
+   - homepage loads
+   - listing page loads
+   - admin redirects to login
+   - host submission form loads
+   - form POST creates a row
+   - admin model labels are spelled correctly
+   - dark-mode toggle works if implemented
+
+## Pitfalls
+
+- Airbnb or marketplace pages may block scraping. Seed with partial/placeholder data and make content editable in admin; do not fabricate precise details.
+- If using `makemigrations` at container startup with persisted DB and no committed migration history, schema drift can happen. For durable projects, commit migrations or explicitly verify new tables exist after rebuild.
+- Do not copy third-party listing copy verbatim for SEO. Rewrite descriptions for uniqueness.
+- External Messenger links are easiest; embedded Messenger plugins are painful for multi-host marketplaces because each host may need a Facebook Page/domain setup.
+
+## Reference files
+
+- `references/cebu-direct-stays-mvp.md` — session-derived notes from the Cebu direct-stay directory MVP build, including decisions, verification checks, and follow-up recommendations.

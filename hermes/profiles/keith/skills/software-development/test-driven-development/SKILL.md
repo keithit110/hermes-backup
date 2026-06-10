@@ -144,7 +144,7 @@ We'll fix it in REFACTOR.
 
 ```bash
 # Run the specific test
-pytest tests/test_feature.py::test_specific_behavior -v
+pytest tests/test_feature.py::test_name -v
 
 # Then run ALL tests to check for regressions
 pytest tests/ -q
@@ -154,6 +154,8 @@ Confirm:
 - Test passes
 - Other tests still pass
 - Output pristine (no errors, warnings)
+
+For web/app UI changes: passing tests are necessary but not sufficient. After tests pass, verify the actual running target the user will inspect (Docker container, staging/production URL, reverse proxy port, mobile viewport). Rebuild/restart/deploy if needed, fetch the served page/assets, then use a browser to click the changed path and confirm the visible behavior and console state before saying done. See `references/deployed-web-ui-verification.md` for the concrete checklist.
 
 **Test fails?** Fix the code, not the test.
 
@@ -170,6 +172,18 @@ After green only:
 Keep tests green throughout. Don't add behavior.
 
 **If tests fail during refactor:** Undo immediately. Take smaller steps.
+
+### VERIFY RUNTIME — Check the Real Thing
+
+For changes to a live website, containerized app, bot, scheduled job, or service, tests are necessary but not enough. Verify the exact runtime surface the user will judge:
+
+1. Identify the actual target: deployed URL, reverse-proxy port, Docker Compose service, production/staging host, or scheduler storage.
+2. Rebuild/restart/reload that target if needed; do not assume source edits are live.
+3. Probe the target directly (`curl`, health endpoint, served HTML/static asset version, scheduler list, etc.).
+4. Use browser automation for visible UI behavior: click the actual button, open the modal, confirm map/form/content appears, and inspect console errors.
+5. Report the exact target verified and the real output observed.
+
+**Pitfall:** Passing tests on a local dev server does not prove the Docker/reverse-proxied/deployed website changed. If the user checks the public/running site and sees old behavior, the verification failed.
 
 ### Repeat
 
@@ -268,6 +282,12 @@ Before marking work complete:
 - [ ] Output pristine (no errors, warnings)
 - [ ] Tests use real code (mocks only if unavoidable)
 - [ ] Edge cases and errors covered
+- [ ] If the change affects a running website/service, verified the **actual running target** the user will see (container, deployed port, reverse-proxy URL, or production/staging URL) — not only a local dev server
+- [ ] If static assets changed, verified the running target serves the new asset version/cache-buster and the browser loads that version
+- [ ] If UI behavior changed, used browser interaction/DOM checks against the running target to confirm visible behavior, not just HTML snapshots or unit tests
+
+Can't check all boxes? You skipped TDD/verification. Start over or explicitly report the blocker.
+- [ ] Browser interaction verified on the real target, including console check
 
 Can't check all boxes? You skipped TDD. Start over.
 
@@ -281,6 +301,10 @@ Can't check all boxes? You skipped TDD. Start over.
 | Test setup huge | Extract helpers. Still complex? Simplify the design. |
 
 ## Hermes Agent Integration
+
+### Django template/UI changes
+
+For Django-rendered UI changes, follow the same RED-GREEN-REFACTOR cycle with `TestCase` assertions against real rendered pages before editing templates. Assert visible copy, DOM hooks (`data-*` attributes), removed old blocks, and ordering of key sections. After tests pass, perform browser verification for JavaScript interactions and static assets. See `references/django-template-ui-tdd.md` for a compact checklist and examples.
 
 ### Running Tests
 
@@ -296,6 +320,19 @@ terminal("pytest tests/test_feature.py::test_name -v")
 # Full suite — verify no regressions
 terminal("pytest tests/ -q")
 ```
+
+### Django model/form/admin changes
+
+For Django feature work that touches models, forms, admin, or templates, keep the RED-GREEN loop concrete and end-to-end:
+
+1. Write a failing `django.test.TestCase` first for the user-visible/admin-visible behavior, not just the model field. Good assertions include: required form fields, saved model values, admin checklist fields, template guidance text, and validation rules.
+2. Run the narrow test and verify it fails for the missing behavior.
+3. Implement the minimum model/form/template/admin changes.
+4. Run the narrow test until green.
+5. Generate/check migrations with `python manage.py makemigrations <app> --noinput` when model fields changed.
+6. Run the full suite plus `python manage.py check` before reporting completion.
+
+Pitfall: do not treat adding model fields as complete until the public form, admin review workflow, migration, and tests all agree. For anti-fraud / approval workflows, tests should assert both host-facing prerequisites and admin-only checklist fields so the approval process cannot silently become documentation-only.
 
 ### With delegate_task
 

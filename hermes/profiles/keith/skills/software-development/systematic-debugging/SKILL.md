@@ -248,6 +248,19 @@ pytest tests/test_module.py::test_regression -v
 pytest tests/ -q
 ```
 
+### 3b. Verify the Actual Target, Not Just a Convenient Local Copy
+
+For web/app changes, automated tests are not enough. Identify the exact surface the user will check (Docker container, staging URL, production domain, reverse proxy port, mobile viewport) and verify that target after deployment/restart.
+
+Minimum checks before saying done:
+- Confirm which process/container/port/domain is actually serving the user-facing site.
+- Rebuild/restart/deploy that target when source files changed.
+- Fetch the served HTML/assets from the target and check cache-busted CSS/JS versions if relevant.
+- Use a browser against the target URL, click through the changed behavior, and inspect DOM/console for the visible result.
+- If local/dev verification differs from deployed verification, report the distinction and do not claim the live site is fixed until the live target is checked.
+
+See `references/deployed-site-verification.md` for a concise checklist and an example failure mode.
+
 ### 4. If Fix Doesn't Work — The Rule of Three
 
 - **STOP.**

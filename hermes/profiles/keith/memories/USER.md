@@ -1,4 +1,4 @@
-Keith prefers concise, no-BS answers with practical caveats and direct pushback when assumptions seem wrong.
+Keith prefers concise, no-BS answers with direct pushback. For website/code changes, validate against the actual running/deployed site in a browser (especially mobile UI), not just local tests; screenshots and production behavior are source of truth.
 §
 Keith is an infrastructure engineer and database administrator. His main experience is managing SQL Server, and his team is transitioning to Aurora PostgreSQL on AWS. He is less familiar with Aurora and AWS and may need help with those topics.
 §

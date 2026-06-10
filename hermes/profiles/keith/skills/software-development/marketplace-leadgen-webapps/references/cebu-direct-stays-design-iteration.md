@@ -1,92 +1,75 @@
 # Cebu Direct Stays design iteration notes
 
-Session-derived notes for mobile-first travel/accommodation marketplace redesigns.
+Session-derived lessons for marketplace/direct-stay homepage work, especially for Keith's Cebu accommodation directory.
 
-## User taste signals
+## Design corrections that mattered
 
-- Keith prefers no-BS, direct critique and fast iteration over long theoretical design explanation.
-- For accommodation/travel pages, “clean” is not enough; the page must create a vacation/travel feeling.
-- Mobile is the priority because most guests will browse from phones.
-- If an element looks like a button, it should be clickable. Decorative pills/chips that look like CTAs are clutter.
+- Mobile is the primary viewport. Most guests will likely arrive from phones/Facebook/Messenger, so the homepage should prioritize mobile clarity over desktop decoration.
+- Do not duplicate navigation choices as large homepage cards when those same choices already live in the hamburger/top navigation. It creates clutter and makes users unsure what to do.
+- If category options are in the hamburger/dropdown, the homepage should focus on the primary user actions:
+  - Browse stays
+  - List your property
+  - Message/contact host from listing pages
+- Avoid fake button-looking badges/pills that are not clickable. If an element looks like a button, it should do something. Otherwise use plain text, metadata, or remove it.
+- Text spacing and vertical rhythm matter. Watch for boxed sections touching card grids, overly tight tracking, and cramped mobile layouts.
+- Do not copy Airbnb's coral/pink palette by default. For Cebu Direct Stays, a teal/navy/gold direction felt more ownable.
+- The user wants no-BS design critique and practical iteration: if he says it feels clunky/bland, treat that as a design failure, not as a request for tiny tweaks.
 
-## Specific design lessons
+## Hero pattern lesson
 
-### Category navigation
+The user referenced a travel landing page where the background image covers the full top of the page and the text carousel sits *inside the hero image*.
 
-Do not duplicate stay-type/category links in multiple places on the homepage. If categories are already in the top nav/hamburger menu, remove large category cards from the homepage. On mobile they read as clutter and distract from the primary guest path.
+Correct pattern:
 
-Good homepage primary actions:
+```text
+full-bleed vacation image
+→ centered hero text slide
+→ small carousel dots below the text
+→ text auto-rotates; dots are clickable
+→ primary CTAs below the dots
+```
 
-- Browse Cebu stays
-- List your property
+Incorrect pattern that frustrated the user:
 
-Keep detailed stay-type routes in the nav/hamburger:
+```text
+full-bleed image hero
+→ separate story/card carousel below the hero
+```
 
-- Mactan airport stays
-- Cebu daily condos
-- Weekly & monthly stays
-- Staycation condos
+If the user points to circled text inside a screenshot, inspect whether the requested element is inside the hero/image area rather than a separate section.
 
-### Mobile hamburger behavior
+## Mobile nav behavior
 
-Mobile menus should close when:
+Hamburger/dropdown menus should close when:
 
-- user taps outside the menu
-- user taps a menu link
-- user presses Escape
+- tapping outside the menu
+- tapping a menu link
+- pressing Escape
 
-The hamburger icon should visibly switch to an X/open state. Verify this behavior in browser JS, not just by source inspection.
+The hamburger icon should visually transition to an X when open. Verify this behavior in browser, not only by reading code.
 
-### Cinematic hero treatment
+## Verification checklist for this class of design pass
 
-For a modern travel feel, make the hero background image full-bleed across the top of the site. Do not place the background image inside a rounded card if the user references cinematic travel-site screenshots.
+- Browser visual check of the hero and below-the-fold content.
+- Mobile-width check if possible; at minimum inspect mobile CSS and nav behavior.
+- Confirm removed text/cards are no longer present in homepage HTML.
+- Confirm cache-bust version changed for CSS/JS so the browser sees updates.
+- Confirm Docker app health endpoint returns `ok` after restart.
+- Confirm no blank gaps caused by scroll reveal animations.
 
-Pattern:
+## Copy direction
 
-- fixed/overlay nav on top of hero image
-- full-width, full-viewport-ish hero section
-- gradient scrim over image for headline legibility
-- large emotional headline
-- short supporting copy
-- two real CTAs only
-- nav becomes solid/blurred after scroll
+Prefer customer-facing travel/booking copy over internal/product labels.
 
 Avoid:
 
-- hero image trapped inside a card
-- non-clickable trust pills designed like buttons
-- repeated category cards below the hero
-- too many click targets on first mobile screen
+- "MVP"
+- "directory MVP"
+- fake UI labels
+- overly technical explanations in hero copy
 
-### Animation
+Better:
 
-Add subtle interaction, but don’t hide content behind JS:
-
-- scroll reveal as progressive enhancement
-- card hover/touch lift
-- image zoom/saturation on card hover
-- button press/hover states
-- respect `prefers-reduced-motion`
-- content should remain visible if JS fails
-
-### Typography/spacing
-
-Watch screenshots for:
-
-- sections/cards touching or crowding each other
-- overly tight letter spacing that makes headings feel compressed
-- desktop spacing that collapses badly on mobile
-
-Inter with relaxed tracking worked better than a rounded Airbnb-like font for this project after the user rejected the Airbnb-adjacent feel.
-
-## Verification checklist
-
-After each design pass:
-
-1. Open homepage in browser.
-2. Inspect the top hero visually.
-3. Scroll down; ensure no hidden/blank sections.
-4. Check mobile width or screenshot if possible.
-5. Test hamburger open/close and outside-click behavior.
-6. Confirm duplicate category cards/fake pills are absent when removed.
-7. Confirm Docker app is still healthy if deployed.
+- "Where will you stay in Cebu?"
+- "Find Cebu condos without the platform-fee headache."
+- "Browse stays, compare essentials, and message the host directly."

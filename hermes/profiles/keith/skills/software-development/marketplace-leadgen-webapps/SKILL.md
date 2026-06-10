@@ -120,18 +120,28 @@ First-pass admin-style UIs often look dated. For public marketplace pages:
 - If the user says the site feels outdated, clunky, or lacks "pop," treat that as a design-quality failure: redesign the visual hierarchy, CTA structure, hero, card system, and content sections — do not only tweak colors.
 - For mobile marketplace homepages, do not leave core navigation categories only as cards below the hero. Put primary stay/search categories in the top nav via a compact dropdown or hamburger menu. If the hamburger/dropdown already contains those options, do not duplicate the same category cards on the homepage — it creates clutter and confuses the primary guest action.
 - Mobile nav must behave like an app menu: close when the user taps outside, presses Escape, or taps a link. Verify the close behavior after implementing the hamburger menu.
-- For travel/accommodation marketplaces, a clean directory UI can still feel bland. If the user asks for a cinematic/travel feel, make the hero image full-bleed across the top of the page, not trapped inside a rounded card. Overlay the nav and hero copy on the image, add a gradient scrim for legibility, and let the nav become solid/blurred on scroll.
-- Remove fake button-looking decorative pills/chips from the homepage when they are not clickable. Non-clickable elements that look like buttons confuse mobile users; keep only real CTAs such as “Browse stays” and “List your property.”
+- If implementing a hero text carousel inside a full-bleed image, it must be centered on mobile, have visible pagination dots, support touch/pointer swipe left/right in addition to auto-advance, and keep the primary CTA obvious. Do not substitute a separate below-hero card carousel when the reference shows text inside the hero image.
+- If the user references a travel screenshot with circled text inside the hero image, implement the text carousel *inside the full-bleed hero image* with centered slide text and dot indicators. Do not misinterpret this as a separate below-hero card carousel.
+- Do not style non-clickable labels as button-like pills. If it looks like a button, it should be clickable; otherwise turn it into plain supporting text or remove it.
+- Remove prototype/internal wording before presenting as "production-ready". Avoid labels like "MVP", "directory MVP", or test-ish copy in public hero sections; use customer-facing value propositions instead.
+
 - Use scroll and card animations as progressive enhancement: sections can rise/fade in, cards can lift/scale and images can subtly zoom on hover/tap-capable devices, but the content must remain visible without JS and respect `prefers-reduced-motion`.
 - Remove prototype/internal wording before presenting as "production-ready". Avoid labels like "MVP", "directory MVP", or test-ish copy in public hero sections; use customer-facing value propositions instead.
 - Dark-mode toggles should use recognizable icons (prefer inline SVG moon/sun icons) and persist preference in `localStorage`; verify both visual states.
 - Avoid hiding essential content behind JavaScript-only scroll reveal. Progressive enhancement is safer: content visible by default, animation layered on top.
-- Verify visually with browser screenshots, not just `curl`.
+- Verify visually with browser screenshots, not just `curl`. Do not tell Keith a frontend change is complete until you have inspected the rendered page and judged whether the result is appealing, coherent, mobile-friendly, and aligned with the requested direction.
+- For mobile-first sites, validate at a real mobile viewport before claiming completion. A good default is Playwright Chromium at `393x852` with `is_mobile=True` and `has_touch=True`, plus an actual screenshot review.
+- For mobile carousels, prefer native horizontal scrolling/scroll-snap over transform-only fake swipes. Measure active slide/text with `getBoundingClientRect()` and confirm center offset is near 0; also verify `scrollLeft` changes and active dots update.
+- Use relevant design skills (`popular-web-designs`, `sketch`, or project-specific references) before major visual changes. Treat design validation as part of the deliverable, not optional polish.
 - Check section spacing carefully: page hero/header panels must not touch listing-card grids; keep clear vertical rhythm between boxed sections and cards.
 - Avoid overly tight negative letter-spacing on marketplace headings/cards; if text looks compressed or nearly overlapping, switch to a cleaner font stack and relax tracking.
 - Do not blindly copy Airbnb's coral/pink palette for accommodation sites; if the user dislikes it, pivot to a distinct brand palette (for Cebu Direct Stays: teal/navy/gold feels more ownable and less derivative).
 - Scroll down during verification; do not only inspect the hero section. Sticky nav can obscure content while checking screenshots.
+- For Keith's mobile-first web projects, visual/mobile validation is part of the deliverable, not optional polish. Before saying “done,” use a rendered mobile/touch viewport, inspect screenshots, test interactions, and measure DOM geometry for alignment/edge cases.
+- For hero text carousels inside full-bleed images, prefer native horizontal scrolling + `scroll-snap` on mobile. Validate that the carousel track and active slide span the viewport edge-to-edge; avoid transform-only swipes inside centered wrappers that create clipped left/right edges.
+- For property detail pages, use an Airbnb-style compact photo mosaic before listing details, plus a manual swipe lightbox for more photos. Do not vertically dump all photos above the description.
 - See `references/cebu-direct-stays-design-iteration.md` for session-derived design/verification notes from the Cebu Direct Stays MVP.
+- See `references/cebu-direct-stays-mobile-ui-validation.md` for the mobile validation workflow, carousel fix pattern, and listing-detail photo layout lessons from Keith's feedback.
 
 ## Docker deployment checklist
 

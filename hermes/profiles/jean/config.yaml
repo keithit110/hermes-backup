@@ -479,6 +479,7 @@ sessions:
 onboarding:
   seen:
     profile_build_offered: true
+    busy_input_prompt: true
   profile_build: ask
 updates:
   pre_update_backup: false

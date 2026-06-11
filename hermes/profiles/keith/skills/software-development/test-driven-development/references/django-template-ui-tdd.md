@@ -20,11 +20,14 @@ For template-only changes, prefer small model properties over view-specific stri
 
 Django tests prove server-rendered markup, but not actual browser JS behavior. After tests pass:
 
-1. Run the dev server.
+1. Run the dev server or rebuilt container that the user will actually inspect.
 2. Open the real page in the browser tool.
-3. Click the interaction target, e.g. sticky `Message host` button.
-4. Verify modal/open state via snapshot or DOM inspection.
-5. Check console errors.
+3. Click the interaction target, e.g. sticky `Message host` button or `See all amenities` inline expander.
+4. Verify the state transition via DOM inspection, not just a screenshot: `aria-expanded`, changed button text, hidden element count, visible class changes, or modal open state.
+5. Toggle back/collapse if applicable and verify the reverse state too.
+6. Check console errors.
+
+For compact inline list/expander UI, good DOM probes include initial hidden extra count, delimiter-separated visible text, `data-*` hooks, `aria-expanded=false -> true -> false`, and button text `See all ... -> See less -> See all ...`.
 
 ## Static asset verification
 

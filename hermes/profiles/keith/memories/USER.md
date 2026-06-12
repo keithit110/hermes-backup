@@ -1,4 +1,4 @@
-Keith prefers concise, no-BS answers with direct pushback. For website/code changes, validate against the actual running/deployed site in a browser (especially mobile UI), not just local tests; screenshots and production behavior are source of truth.
+Keith prefers concise, no-BS answers with direct pushback. For website/code changes, validate the running/deployed site in a browser, especially mobile; screenshots and production behavior are source of truth. UI animations should be noticeable but tasteful, not barely visible or gimmicky.
 §
 Keith is an infrastructure engineer and database administrator. His main experience is managing SQL Server, and his team is transitioning to Aurora PostgreSQL on AWS. He is less familiar with Aurora and AWS and may need help with those topics.
 §

@@ -199,6 +199,10 @@ those carry more visual identity than the specific font face.
 | `spotify.md` | Spotify | Vibrant green on dark, bold type, album-art-driven |
 | `uber.md` | Uber | Bold black and white, tight type, urban energy |
 
+## Motion guidance for marketplace/listing UIs
+
+For travel, accommodation, and listing-card marketplaces, pair brand tokens with restrained motion. Before using 3D, blur, glow, or “fly toward user” effects, check whether the selected design system actually uses that language. For Airbnb-style marketplace pages, prefer subtle fade + upward lift/glide. See `references/marketplace-scroll-motion.md` for the reusable CSS pattern and verification checklist.
+
 ## Choosing a Design
 
 Match the design to the content:

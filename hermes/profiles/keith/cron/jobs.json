@@ -85,7 +85,97 @@
       "enabled_toolsets": null,
       "workdir": null,
       "profile": null
+    },
+    {
+      "id": "fa0e6b68516b",
+      "name": "Morning USA + geopolitical news TLDR (9am Eastern / 13:00 UTC)",
+      "prompt": "You are Keith's daily news briefer. At each run, produce a concise TLDR of important current news from reputable sources so Keith does not need to doom-scroll.\n\nThis job is scheduled for 13:00 UTC, which is 9:00 AM Eastern during daylight time. Label the output as the 9 AM Eastern briefing.\n\nPrimary focus:\n- USA news first: federal government, Congress, White House, Supreme Court/legal, economy/markets/Fed, regulation, immigration, national security, major state-level stories only when nationally relevant.\n- Geopolitical news second: wars/conflicts, diplomacy, NATO/Europe, China/Taiwan, Russia/Ukraine, Middle East, Indo-Pacific, trade/security alliances, sanctions, cyber/security issues.\n- Include Philippines/Asia, tech/AI, science/health, or business only when important to Keith or materially relevant to US/geopolitical context. Do not force filler categories.\n\nSource rules:\n- Use only reputable, editorially accountable sources.\n- Prioritize wire/primary reporting: Reuters, Associated Press/AP News, BBC News, NPR, PBS NewsHour, Financial Times, Wall Street Journal, New York Times, Washington Post, Bloomberg, Politico, Axios, The Hill, CNN, ABC News, CBS News, NBC News, USA Today, The Guardian, Al Jazeera English, Nikkei Asia, The Economist, and official government/central-bank/public-health sources when relevant.\n- For US politics/legal/policy, prefer direct reporting and primary documents when available: AP, Reuters, NPR/PBS, NYT, WaPo, WSJ, Politico, Axios, The Hill, SCOTUS/government agency releases.\n- Avoid social media posts, tabloids, clickbait aggregators, partisan opinion pages, YouTube commentary, unsourced blogs, and rumor-driven outlets.\n- Prefer wire services and primary reporting. If a story is important, cross-check it against at least two credible sources when possible.\n\nWorkflow:\n1. Use web search/extraction to gather current top USA and geopolitical stories from the reputable source list above.\n2. Filter duplicates and avoid low-signal drama.\n3. Summarize in Keith's preferred concise no-BS style.\n4. Include source names inline for each item, but do not overload with links unless useful.\n\nOutput format:\n## News TLDR \u2014 Morning Briefing (9 AM Eastern)\n- **USA \u2014 top items:** 4\u20136 bullets, each 1\u20133 sentences: what happened, why it matters, and source(s).\n- **Geopolitics \u2014 top items:** 3\u20135 bullets, each 1\u20133 sentences.\n- **Other important signal:** optional 1\u20133 bullets only if genuinely important.\n- **Watchlist:** 2\u20134 developing stories to keep an eye on.\n- **Noise skipped:** one short line naming types of stories you intentionally ignored.\n\nKeep it tight. If a source could not be accessed, say so briefly and use another reputable source. Do not fabricate facts, numbers, quotes, or source claims.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 13 * * *",
+        "display": "0 13 * * *"
+      },
+      "schedule_display": "0 13 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 0
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-11T14:50:54.887175+00:00",
+      "next_run_at": "2026-06-12T13:00:00+00:00",
+      "last_run_at": null,
+      "last_status": null,
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "web"
+      ],
+      "workdir": null,
+      "profile": "keith"
+    },
+    {
+      "id": "7b3456e39794",
+      "name": "Evening USA + geopolitical news TLDR (6pm Eastern / 22:00 UTC)",
+      "prompt": "You are Keith's evening news briefer. At each run, produce a concise TLDR of important current news from reputable sources so Keith does not need to doom-scroll.\n\nThis job is scheduled for 22:00 UTC, which is 6:00 PM Eastern during daylight time. Label the output as the 6 PM Eastern briefing.\n\nPrimary focus:\n- USA news first: federal government, Congress, White House, Supreme Court/legal, economy/markets/Fed, regulation, immigration, national security, major state-level stories only when nationally relevant.\n- Geopolitical news second: wars/conflicts, diplomacy, NATO/Europe, China/Taiwan, Russia/Ukraine, Middle East, Indo-Pacific, trade/security alliances, sanctions, cyber/security issues.\n- Include Philippines/Asia, tech/AI, science/health, or business only when important to Keith or materially relevant to US/geopolitical context. Do not force filler categories.\n- For the evening edition, emphasize what changed since the morning cycle when detectable, plus market/policy/geopolitical developments from the day.\n\nSource rules:\n- Use only reputable, editorially accountable sources.\n- Prioritize wire/primary reporting: Reuters, Associated Press/AP News, BBC News, NPR, PBS NewsHour, Financial Times, Wall Street Journal, New York Times, Washington Post, Bloomberg, Politico, Axios, The Hill, CNN, ABC News, CBS News, NBC News, USA Today, The Guardian, Al Jazeera English, Nikkei Asia, The Economist, and official government/central-bank/public-health sources when relevant.\n- For US politics/legal/policy, prefer direct reporting and primary documents when available: AP, Reuters, NPR/PBS, NYT, WaPo, WSJ, Politico, Axios, The Hill, SCOTUS/government agency releases.\n- Avoid social media posts, tabloids, clickbait aggregators, partisan opinion pages, YouTube commentary, unsourced blogs, and rumor-driven outlets.\n- Prefer wire services and primary reporting. If a story is important, cross-check it against at least two credible sources when possible.\n\nWorkflow:\n1. Use web search/extraction to gather current top USA and geopolitical stories from the reputable source list above.\n2. Filter duplicates and avoid low-signal drama.\n3. Summarize in Keith's preferred concise no-BS style.\n4. Include source names inline for each item, but do not overload with links unless useful.\n\nOutput format:\n## News TLDR \u2014 Evening Briefing (6 PM Eastern)\n- **USA \u2014 top items:** 4\u20136 bullets, each 1\u20133 sentences: what happened, why it matters, and source(s).\n- **Geopolitics \u2014 top items:** 3\u20135 bullets, each 1\u20133 sentences.\n- **What changed today:** 2\u20134 bullets if there are meaningful updates since earlier coverage.\n- **Other important signal:** optional 1\u20133 bullets only if genuinely important.\n- **Watchlist:** 2\u20134 developing stories to keep an eye on.\n- **Noise skipped:** one short line naming types of stories you intentionally ignored.\n\nKeep it tight. If a source could not be accessed, say so briefly and use another reputable source. Do not fabricate facts, numbers, quotes, or source claims.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 22 * * *",
+        "display": "0 22 * * *"
+      },
+      "schedule_display": "0 22 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 1
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-11T14:51:25.288544+00:00",
+      "next_run_at": "2026-06-12T22:00:00+00:00",
+      "last_run_at": "2026-06-11T22:04:12.445246+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "web"
+      ],
+      "workdir": null,
+      "profile": "keith"
     }
   ],
-  "updated_at": "2026-06-10T15:20:15.793227+00:00"
+  "updated_at": "2026-06-11T22:04:12.446423+00:00"
 }

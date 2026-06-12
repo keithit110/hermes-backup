@@ -306,6 +306,10 @@ Can't check all boxes? You skipped TDD. Start over.
 
 For Django-rendered UI changes, follow the same RED-GREEN-REFACTOR cycle with `TestCase` assertions against real rendered pages before editing templates. Assert visible copy, DOM hooks (`data-*` attributes), removed old blocks, and ordering of key sections. After tests pass, perform browser verification for JavaScript interactions and static assets. See `references/django-template-ui-tdd.md` for a compact checklist and examples.
 
+When a requested UI change is a space-saving refactor, do **not** flatten the design into plain text unless the user explicitly asks for plain text. Preserve the original visual affordance/class of component where possible: if the old UI used pill/button-like chips with icons/checkmarks, the compact version should still read as designed chips, and the test should assert durable hooks for those affordances (for example `amenity-token`, icon/checkmark spans, and the expand/collapse button) rather than only asserting text and `data-*` toggles. Browser verification should include a visual check/screenshot of the exact section, not only DOM state.
+
+When adding scroll-triggered visual interaction (listing cards, category chips, landing sections), test durable animation hooks first, implement IntersectionObserver + reduced-motion fallbacks, bump static cache-busters, then verify the running site by scrolling in a mobile browser and checking both screenshots and computed animation state. Do not treat “animation fired” as sufficient: visually judge whether the motion fits the site’s design system. For marketplace/travel listing pages, avoid gimmicky 3D/blur/fly-at-user effects unless explicitly desired; prefer subtle fade + upward lift/glide. See `references/scroll-animation-ui-verification.md` for the checklist and pitfalls.
+
 ### Running Tests
 
 Use the `terminal` tool to run tests at each step:

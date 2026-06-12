@@ -81,6 +81,7 @@ For Keith, keep the tone direct/no-BS: if he asks whether SEO, host payments, or
 
 See `references/cebu-direct-stay-session-notes.md` for Keith-specific Cebu strategy notes.
 See `references/dockerized-django-directory-mvp.md` for the concrete Docker/Django MVP shape and pitfalls learned while starting Cebu Direct Stays.
+See `references/django-listing-taxonomy-ui.md` for the Django pattern for separating broad Airbnb-style `unit_type` filters from specific layout/property subtypes and displaying them across form, cards, homepage, browse, and detail pages.
 
 ## Recommended build stack for MVP
 

@@ -138,10 +138,12 @@ First-pass admin-style UIs often look dated. For public marketplace pages:
 - Do not blindly copy Airbnb's coral/pink palette for accommodation sites; if the user dislikes it, pivot to a distinct brand palette (for Cebu Direct Stays: teal/navy/gold feels more ownable and less derivative).
 - Scroll down during verification; do not only inspect the hero section. Sticky nav can obscure content while checking screenshots.
 - For Keith's mobile-first web projects, visual/mobile validation is part of the deliverable, not optional polish. Before saying “done,” use a rendered mobile/touch viewport, inspect screenshots, test interactions, and measure DOM geometry for alignment/edge cases.
+- Treat “dead space” feedback on mobile hero sections as a conversion/layout bug, not a subjective nit. Tighten the mobile-only vertical rhythm: reduce oversized `min-height`/padding, move headline/lead/CTA groups upward, bring dots/buttons closer to copy, and preserve readability over the image overlay. Verify with a screenshot at the same approximate mobile height the user showed, plus DOM measurements for nav/content/dots/button gaps.
 - For hero text carousels inside full-bleed images, prefer native horizontal scrolling + `scroll-snap` on mobile. Validate that the carousel track and active slide span the viewport edge-to-edge; avoid transform-only swipes inside centered wrappers that create clipped left/right edges.
 - For property detail pages, use an Airbnb-style compact photo mosaic before listing details, plus a manual swipe lightbox for more photos. Do not vertically dump all photos above the description.
 - See `references/cebu-direct-stays-design-iteration.md` for session-derived design/verification notes from the Cebu Direct Stays MVP.
 - See `references/cebu-direct-stays-mobile-ui-validation.md` for the mobile validation workflow, carousel fix pattern, and listing-detail photo layout lessons from Keith's feedback.
+- See `references/mobile-hero-dead-space-validation.md` for tightening full-bleed mobile hero spacing when Keith flags wasted above-the-fold real estate.
 
 ## Docker deployment checklist
 

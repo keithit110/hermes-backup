@@ -76,6 +76,7 @@ If the user previously expected a job and it is not in Hermes cron, explicitly s
 - **Pitfall: Counting only Hermes cron.** If a backup was installed in `/etc/cron.d`, Hermes `cronjob list` will not show it.
 - **Pitfall: Reporting existence without evidence.** For backups, include recent log lines, commit hashes, timestamps, or artifact paths.
 - **Pitfall: Treating transient scheduler storage as canonical.** Check the actual file/service/remote that performs the work.
+- **Pitfall: Confusing chat sessions with scheduled-job state.** `/new` starts a fresh conversation/context window; it does not delete, pause, or recreate Hermes cron jobs, Linux cron jobs, systemd timers, files, containers, or databases. Cron `deliver: origin` jobs can still deliver to the originating chat/topic even after a new session starts.
 - **Pitfall: Ambiguous wording.** User may say “ground jobs” or “cron jobs” and mean all recurring jobs, not only Hermes-managed jobs.
 
 ## Example: Hermes Backup Job Pattern

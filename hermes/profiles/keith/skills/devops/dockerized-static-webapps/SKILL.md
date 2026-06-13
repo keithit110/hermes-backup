@@ -13,6 +13,10 @@ metadata:
 
 Use this skill when the user wants to host a static web app from a Git repo or local upload on a VPS inside Docker instead of directly on the host.
 
+## Reference docs
+
+- `references/visual-hero-asset-updates.md` — checklist for replacing generated hero/background images: local static asset, dimension verification, cache busting, container rebuild, and desktop/mobile visual checks.
+
 ## User preference
 
 For Keith, keep operational answers terse and action-oriented unless he asks for explanation. Do not ask him to paste credentials in chat; use deploy keys, SSH config, or manual GitHub UI steps.
@@ -152,3 +156,4 @@ git@github.com-<project>:OWNER/REPO.git
 - For static password generators, avoid server-side secrets entirely; everything in the image is public to clients.
 - Verify the app in Docker before configuring DNS/HTTPS.
 - A successful `docker run hello-world` proves Docker daemon, networking, and image pulls work.
+- For generated hero/background images, do not trust prompt words like “4K” or “8K”; inspect actual dimensions and verify the served asset. If you upscale, say it is an upscale, not a native high-res render. Use `references/visual-hero-asset-updates.md` for the full checklist.

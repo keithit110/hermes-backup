@@ -593,7 +593,14 @@ python3 scripts/fetch_logs.py --tail-queue --host https://cloud.comfy.org
     `--randomize-seed` and omit the seed) to get a fresh seed per run.
     The actual seed is logged to stderr.
 
-11. **`tracking` prompt** — first run of `comfy` may prompt for analytics.
+11. **Prompted resolution is not guaranteed** — words like “4K” or “8K” in a
+    prompt do not prove the output is native high resolution. Always inspect the
+    actual output dimensions and file size before telling the user it is 4K/8K.
+    If you upscale a lower-resolution image, say so plainly: it is a production
+    upscale, not a native high-res render. Also inspect generated website assets
+    for fake/gibberish text before applying them.
+
+12. **`tracking` prompt** — first run of `comfy` may prompt for analytics.
     Use `comfy --skip-prompt tracking disable` to skip non-interactively.
     `comfyui_setup.sh` does this for you.
 

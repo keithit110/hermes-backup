@@ -77,11 +77,24 @@ Start with an embedded inquiry/chat-style lead form:
 
 This gives a chat-like website experience while avoiding full real-time messaging complexity.
 
+## Host availability before full host accounts
+
+For early MVPs, give approved hosts a secure per-listing magic link to maintain availability instead of requiring a full account dashboard.
+
+- Generate a long random token per live listing and store only its hash.
+- Scope each token to exactly one listing.
+- Add an admin action to regenerate/revoke the link if compromised.
+- Email the new private link to the host after approval or regeneration.
+- If the listing uses an active Airbnb/Booking.com/Agoda iCal feed, disable manual blocking/unblocking in the host UI and show a clear warning that availability must be managed on the linked booking platform.
+
+See `references/host-calendar-magic-links-and-ical.md` for implementation details and verification checks.
+
 For Keith, keep the tone direct/no-BS: if he asks whether SEO, host payments, or Facebook chat will “just work,” say what is realistic and what is not. Do not overpromise rankings, gateway approval, or Facebook automation.
 
 See `references/cebu-direct-stay-session-notes.md` for Keith-specific Cebu strategy notes.
 See `references/dockerized-django-directory-mvp.md` for the concrete Docker/Django MVP shape and pitfalls learned while starting Cebu Direct Stays.
 See `references/django-listing-taxonomy-ui.md` for the Django pattern for separating broad Airbnb-style `unit_type` filters from specific layout/property subtypes and displaying them across form, cards, homepage, browse, and detail pages.
+See `references/host-calendar-magic-links-and-ical.md` for the early-stage host availability pattern: secure per-listing magic links, admin regeneration, and iCal-linked manual-edit lockout.
 
 ## Recommended build stack for MVP
 

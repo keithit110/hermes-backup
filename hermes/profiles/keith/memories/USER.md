@@ -1,4 +1,4 @@
-Keith prefers concise, no-BS answers with direct pushback. For website/code changes, validate the running/deployed site in a browser, especially mobile; screenshots and production behavior are source of truth. UI animations should be noticeable but tasteful, not barely visible or gimmicky.
+Keith prefers concise, no-BS answers with direct pushback. For website changes, validate live/mobile browser behavior; screenshots are source of truth. UI motion should be noticeable but tasteful. For hero/backgrounds, offer numbered premium image options before applying.
 §
 Keith is an infrastructure engineer and database administrator. His main experience is managing SQL Server, and his team is transitioning to Aurora PostgreSQL on AWS. He is less familiar with Aurora and AWS and may need help with those topics.
 §

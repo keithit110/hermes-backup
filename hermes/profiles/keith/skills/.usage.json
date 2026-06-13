@@ -1,29 +1,42 @@
 {
+  "comfyui": {
+    "archived_at": null,
+    "created_at": "2026-06-12T03:47:22.675316+00:00",
+    "created_by": null,
+    "last_patched_at": "2026-06-12T04:13:47.098633+00:00",
+    "last_used_at": "2026-06-12T04:08:15.780723+00:00",
+    "last_viewed_at": "2026-06-12T04:08:15.777194+00:00",
+    "patch_count": 1,
+    "pinned": false,
+    "state": "active",
+    "use_count": 2,
+    "view_count": 2
+  },
   "direct-booking-marketplace-mvp": {
     "archived_at": null,
     "created_at": "2026-06-08T01:16:41.681965+00:00",
     "created_by": "agent",
-    "last_patched_at": "2026-06-11T04:54:54.380028+00:00",
-    "last_used_at": "2026-06-11T04:46:39.729656+00:00",
-    "last_viewed_at": "2026-06-11T04:46:39.725945+00:00",
-    "patch_count": 6,
+    "last_patched_at": "2026-06-12T06:35:30.041067+00:00",
+    "last_used_at": "2026-06-12T06:34:50.104781+00:00",
+    "last_viewed_at": "2026-06-12T06:34:50.101259+00:00",
+    "patch_count": 9,
     "pinned": false,
     "state": "active",
-    "use_count": 6,
-    "view_count": 6
+    "use_count": 9,
+    "view_count": 9
   },
   "dockerized-static-webapps": {
     "archived_at": null,
     "created_at": "2026-06-07T18:54:57.354720+00:00",
     "created_by": "agent",
-    "last_patched_at": "2026-06-07T19:10:10.847629+00:00",
-    "last_used_at": "2026-06-07T19:09:21.620242+00:00",
-    "last_viewed_at": "2026-06-07T19:09:21.618071+00:00",
-    "patch_count": 2,
+    "last_patched_at": "2026-06-12T04:13:35.601749+00:00",
+    "last_used_at": "2026-06-12T04:44:47.147879+00:00",
+    "last_viewed_at": "2026-06-12T04:44:47.144455+00:00",
+    "patch_count": 5,
     "pinned": false,
     "state": "active",
-    "use_count": 1,
-    "view_count": 1
+    "use_count": 5,
+    "view_count": 5
   },
   "github-repo-management": {
     "archived_at": null,
@@ -81,14 +94,14 @@
     "archived_at": null,
     "created_at": "2026-06-08T05:44:47.850440+00:00",
     "created_by": "agent",
-    "last_patched_at": "2026-06-11T06:19:00.215644+00:00",
-    "last_used_at": "2026-06-11T06:18:31.119353+00:00",
-    "last_viewed_at": "2026-06-11T06:18:31.116177+00:00",
-    "patch_count": 19,
+    "last_patched_at": "2026-06-12T03:57:29.162930+00:00",
+    "last_used_at": "2026-06-12T03:56:32.998812+00:00",
+    "last_viewed_at": "2026-06-12T03:56:32.995244+00:00",
+    "patch_count": 28,
     "pinned": false,
     "state": "active",
-    "use_count": 5,
-    "view_count": 5
+    "use_count": 9,
+    "view_count": 9
   },
   "no-bs-technical-collaboration": {
     "archived_at": null,
@@ -147,13 +160,13 @@
     "created_at": "2026-06-10T15:26:28.313287+00:00",
     "created_by": "agent",
     "last_patched_at": "2026-06-11T04:55:10.231023+00:00",
-    "last_used_at": "2026-06-11T04:42:45.380085+00:00",
-    "last_viewed_at": "2026-06-11T04:42:45.376229+00:00",
+    "last_used_at": "2026-06-12T16:06:16.583042+00:00",
+    "last_viewed_at": "2026-06-12T16:06:16.579036+00:00",
     "patch_count": 3,
     "pinned": false,
     "state": "active",
-    "use_count": 1,
-    "view_count": 1
+    "use_count": 2,
+    "view_count": 2
   },
   "short-term-rental-growth": {
     "archived_at": null,
@@ -199,12 +212,12 @@
     "created_at": "2026-06-08T03:53:09.767713+00:00",
     "created_by": null,
     "last_patched_at": "2026-06-11T06:56:36.589565+00:00",
-    "last_used_at": "2026-06-11T06:38:22.184581+00:00",
-    "last_viewed_at": "2026-06-11T06:38:22.180594+00:00",
+    "last_used_at": "2026-06-12T06:16:39.631912+00:00",
+    "last_viewed_at": "2026-06-12T06:16:39.628933+00:00",
     "patch_count": 15,
     "pinned": false,
     "state": "active",
-    "use_count": 14,
-    "view_count": 14
+    "use_count": 16,
+    "view_count": 16
   }
 }

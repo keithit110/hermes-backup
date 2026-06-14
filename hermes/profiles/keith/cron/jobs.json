@@ -106,15 +106,15 @@
       "schedule_display": "0 13 * * *",
       "repeat": {
         "times": null,
-        "completed": 2
+        "completed": 3
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-11T14:50:54.887175+00:00",
-      "next_run_at": "2026-06-13T13:00:00+00:00",
-      "last_run_at": "2026-06-12T16:09:02.290331+00:00",
+      "next_run_at": "2026-06-14T13:00:00+00:00",
+      "last_run_at": "2026-06-13T13:03:05.936945+00:00",
       "last_status": "error",
       "last_error": "RuntimeError: HTTP 429: The usage limit has been reached",
       "last_delivery_error": null,
@@ -151,15 +151,15 @@
       "schedule_display": "0 22 * * *",
       "repeat": {
         "times": null,
-        "completed": 2
+        "completed": 3
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-11T14:51:25.288544+00:00",
-      "next_run_at": "2026-06-13T22:00:00+00:00",
-      "last_run_at": "2026-06-12T22:00:54.475285+00:00",
+      "next_run_at": "2026-06-14T22:00:00+00:00",
+      "last_run_at": "2026-06-13T22:01:02.296852+00:00",
       "last_status": "error",
       "last_error": "RuntimeError: HTTP 429: The usage limit has been reached",
       "last_delivery_error": null,
@@ -177,5 +177,5 @@
       "profile": "keith"
     }
   ],
-  "updated_at": "2026-06-12T22:00:54.476371+00:00"
+  "updated_at": "2026-06-13T22:01:02.298097+00:00"
 }

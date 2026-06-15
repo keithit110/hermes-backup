@@ -155,6 +155,28 @@ Later:
 - lead-management services
 - optional pay-per-qualified-lead only after trust and tracking are strong
 
+## Lead-generation webapp implementation pattern
+
+When the ask is broader than accommodation — a local marketplace, directory, or lead-generation webapp — keep the same class-level pattern:
+
+- make SEO-friendly public pages server-rendered;
+- keep admin/listing management simple and durable;
+- capture leads before building two-sided marketplace complexity;
+- validate the traffic source and conversion path before adding accounts, payments, chat, or dashboards;
+- Dockerize early so the site can be deployed and health-checked on the VPS.
+
+For UI iteration, verify the real browser/mobile experience: cards, hero sections, scroll animations, inquiry CTAs, and image loading. Session-specific Cebu UI validation recipes live in the archived `marketplace-leadgen-webapps` package if they need to be recovered.
+
+## Short-term rental growth pattern
+
+For revenue growth questions, separate channels by time horizon:
+
+- **Immediate:** listing quality, photos, pricing, response time, repeat guests, direct referrals.
+- **Near-term:** Facebook group distribution, area-specific landing pages, contact capture, host credibility signals.
+- **Long-term:** SEO, host network expansion, featured placements, email/SMS reactivation, and direct-booking brand trust.
+
+Do not imply SEO or direct bookings will instantly replace Airbnb demand; treat direct booking as an owned-channel compounding strategy.
+
 ## Pitfalls
 
 - Do not charge hosts before proving traffic/leads.
@@ -162,3 +184,4 @@ Later:
 - Do not overbuild host dashboards, real-time chat, payments, reviews, or dispute handling before validating demand.
 - Add trust controls early: manual approval, host verification cues, report button, disclaimers, and contact transparency.
 - SEO takes months; use Facebook groups and manual outreach for early traffic.
+- Do not mistake a pretty directory for a marketplace; demand generation and lead proof are the hard parts.

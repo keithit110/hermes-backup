@@ -1,9 +1,9 @@
 {
-  "last_report_path": null,
-  "last_run_at": "2026-06-08T02:24:38.237758+00:00",
-  "last_run_duration_seconds": null,
-  "last_run_summary": "deferred first run — curator seeded, will run after one interval; use `hermes curator run --dry-run` to preview now",
+  "last_report_path": "/root/.hermes/profiles/jean/logs/curator/20260615-022537",
+  "last_run_at": "2026-06-15T02:25:37.043459+00:00",
+  "last_run_duration_seconds": 337.432027,
+  "last_run_summary": "auto: no changes; llm: Completed an umbrella-building consolidation pass.\n\nCreated 4 class-level umbrella skills and archived 16 narrow/source skills into `~/.hermes/profiles/jean/skills/.archive/`:\n\n- `apple-platform-automation`\n  - Absorbs Apple Notes, Reminder…\narchived 16 skill(s):\n  • apple-notes — pruned (stale)\n  • apple-reminders — pruned (stale)\n  • claude-code — pruned (stale)\n  • codebase-inspection — pruned (stale)\n  • codex — pruned (stale)\n  • findmy — pruned (stale)\n  • github-auth — pruned (stale)\n  • github-code-review — pruned (stale)\n  • github-issues — pruned (stale)\n  • github-pr-workflow — pruned (stale)\n  … and 6 more\nfull report: hermes curator status",
   "last_run_summary_shown_at": null,
   "paused": false,
-  "run_count": 0
+  "run_count": 1
 }

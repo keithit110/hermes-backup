@@ -52,6 +52,8 @@ Use this umbrella for operational work around Hermes itself and the user's small
 
 Check all relevant layers before reporting: Hermes cron jobs, OS crontabs, systemd timers/services, app-specific schedulers, and external CI/webhooks when applicable. Include enabled/disabled state and last/next run if available.
 
+When a Hermes cron job is failing, hanging, or not messaging the user, inspect both job state and logs. A skipped tick such as `already running — skipping` may not deliver a failure message. For recurring news/TLDR briefings, prefer a deterministic pre-run source script plus a no-agent watchdog over a web-heavy LLM-only cron job. See `references/tldr-news-cron-hardening.md` for the reliable pattern, source sanitization step, and verification checklist.
+
 ## VPS Workflow
 
 - Inspect services, disk, ports, Docker state, and firewall before mutation.

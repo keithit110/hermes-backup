@@ -564,7 +564,7 @@ secrets:
 paste_collapse_threshold: 5
 paste_collapse_threshold_fallback: 5
 paste_collapse_char_threshold: 2000
-_config_version: 27
+_config_version: 28
 session_reset:
   mode: none
   idle_minutes: 1440

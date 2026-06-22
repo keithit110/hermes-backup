@@ -1,0 +1,224 @@
+{
+  "jobs": [
+    {
+      "id": "8a6ba342e432",
+      "name": "BPI condo loan payment reminder",
+      "prompt": "Send Keith a high-visibility reminder to pay his BPI bank loan in the Philippines for his condo. Make it attention-grabbing for Telegram using red alert emojis/symbols and bold text. Mention that it is due every 4th/5th of the month and this is the scheduled 10:00 PM UTC reminder. Do not ask questions; just deliver the reminder.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 22 4,5 * *",
+        "display": "0 22 4,5 * *"
+      },
+      "schedule_display": "0 22 4,5 * *",
+      "repeat": {
+        "times": null,
+        "completed": 0
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-10T15:20:08.316996+00:00",
+      "next_run_at": "2026-07-04T22:00:00+00:00",
+      "last_run_at": null,
+      "last_status": null,
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "a9a90207e292",
+      "name": "Sterling Bank Cityscape condo loan payment reminder",
+      "prompt": "Send Keith a high-visibility reminder to pay his Sterling Bank bank loan for his Cityscape condo. Make it attention-grabbing for Telegram using red alert emojis/symbols and bold text. Mention that it is due every 19th/20th of the month and this is the scheduled 10:00 PM UTC reminder. Do not ask questions; just deliver the reminder.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 22 19,20 * *",
+        "display": "0 22 19,20 * *"
+      },
+      "schedule_display": "0 22 19,20 * *",
+      "repeat": {
+        "times": null,
+        "completed": 2
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-10T15:20:15.790342+00:00",
+      "next_run_at": "2026-07-19T22:00:00+00:00",
+      "last_run_at": "2026-06-20T22:00:21.006371+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "fa0e6b68516b",
+      "name": "Morning USA + geopolitics + AI news TLDR (9am Eastern / 13:00 UTC)",
+      "prompt": "You are Keith's daily morning news briefer. A pre-run script has already collected accessible source snippets from working RSS/source feeds. Use ONLY that script output as your factual source material.\n\nDo NOT call tools. Do NOT invent facts. If a section has weak source material, say that briefly instead of filling with guesses.\n\nLabel this as the 9 AM Eastern briefing.\n\nPrimary focus, in priority order:\n1. USA news: federal government, Congress, White House, Supreme Court/legal, economy/markets/Fed, regulation, immigration, national security, and major state-level stories only when nationally relevant.\n2. Geopolitics: wars/conflicts, diplomacy, NATO/Europe, China/Taiwan, Russia/Ukraine, Middle East, Indo-Pacific, trade/security alliances, sanctions, cyber/security.\n3. AI/technology: major AI model/company releases, regulation, safety/security, chips/semiconductors, cloud/datacenter buildout, enterprise adoption, material lawsuits, open-source model shifts, and market-moving AI business news.\n\nOutput format:\n## News TLDR \u2014 Morning Briefing (9 AM Eastern)\n- **USA \u2014 top items:** 4\u20136 bullets, each 1\u20133 sentences.\n- **Geopolitics \u2014 top items:** 3\u20135 bullets, each 1\u20133 sentences.\n- **AI / tech \u2014 top items:** 3\u20135 bullets, each 1\u20133 sentences.\n- **Watchlist:** 2\u20134 developing stories.\n- **Source health:** one short line summarizing which feeds worked and which were excluded/removed.\n\nKeep it concise, useful, and no-BS. Include source names inline like (BBC, NPR, TechCrunch).",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "news_brief_sources.py",
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 13 * * *",
+        "display": "0 13 * * *"
+      },
+      "schedule_display": "0 13 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 11
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-11T14:50:54.887175+00:00",
+      "next_run_at": "2026-06-22T13:00:00+00:00",
+      "last_run_at": "2026-06-21T13:00:46.741256+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "file"
+      ],
+      "workdir": null,
+      "profile": "keith"
+    },
+    {
+      "id": "7b3456e39794",
+      "name": "Evening USA + geopolitics + AI news TLDR (6pm Eastern / 22:00 UTC)",
+      "prompt": "You are Keith's evening news briefer. A pre-run script has already collected accessible source snippets from working RSS/source feeds. Use ONLY that script output as your factual source material.\n\nDo NOT call tools. Do NOT invent facts. If a section has weak source material, say that briefly instead of filling with guesses.\n\nLabel this as the 6 PM Eastern briefing.\n\nPrimary focus, in priority order:\n1. USA news: federal government, Congress, White House, Supreme Court/legal, economy/markets/Fed, regulation, immigration, national security, and major state-level stories only when nationally relevant.\n2. Geopolitics: wars/conflicts, diplomacy, NATO/Europe, China/Taiwan, Russia/Ukraine, Middle East, Indo-Pacific, trade/security alliances, sanctions, cyber/security.\n3. AI/technology: major AI model/company releases, regulation, safety/security, chips/semiconductors, cloud/datacenter buildout, enterprise adoption, material lawsuits, open-source model shifts, and market-moving AI business news.\n4. For the evening edition, emphasize fresh developments since the morning when obvious from timestamps.\n\nOutput format:\n## News TLDR \u2014 Evening Briefing (6 PM Eastern)\n- **USA \u2014 top items:** 4\u20136 bullets, each 1\u20133 sentences.\n- **Geopolitics \u2014 top items:** 3\u20135 bullets, each 1\u20133 sentences.\n- **AI / tech \u2014 top items:** 3\u20135 bullets, each 1\u20133 sentences.\n- **Watchlist:** 2\u20134 developing stories.\n- **Source health:** one short line summarizing which feeds worked and which were excluded/removed.\n\nKeep it concise, useful, and no-BS. Include source names inline like (BBC, NPR, TechCrunch).",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "news_brief_sources.py",
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 22 * * *",
+        "display": "0 22 * * *"
+      },
+      "schedule_display": "0 22 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 9
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-11T14:51:25.288544+00:00",
+      "next_run_at": "2026-06-21T22:00:00+00:00",
+      "last_run_at": "2026-06-20T22:00:40.385903+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "file"
+      ],
+      "workdir": null,
+      "profile": "keith"
+    },
+    {
+      "id": "35c5bedd5c25",
+      "name": "TLDR cron failure/skipped watchdog",
+      "prompt": "Script-only watchdog. It should stay silent unless the morning/evening TLDR news cron job is failed, skipped, overdue, disabled, or has a delivery error.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "tldr_cron_watchdog.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 30,
+        "display": "every 30m"
+      },
+      "schedule_display": "every 30m",
+      "repeat": {
+        "times": null,
+        "completed": 183
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-17T22:16:56.056641+00:00",
+      "next_run_at": "2026-06-21T17:55:20.329627+00:00",
+      "last_run_at": "2026-06-21T17:25:20.329627+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    }
+  ],
+  "updated_at": "2026-06-21T17:25:20.329877+00:00"
+}

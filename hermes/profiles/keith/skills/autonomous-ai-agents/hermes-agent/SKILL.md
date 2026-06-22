@@ -118,7 +118,7 @@ hermes tools disable NAME   Disable a toolset
 
 hermes skills list          List installed skills
 hermes skills search QUERY  Search the skills hub
-hermes skills install ID    Install a skill (ID can be a hub identifier OR a direct https://…/SKILL.md URL; pass --name to override when frontmatter has no name)
+hermes skills install ID    Install a skill (ID can be a hub identifier OR a direct https://…/SOURCE_SKILL.md URL; pass --name to override when frontmatter has no name)
 hermes skills inspect ID    Preview without installing
 hermes skills config        Enable/disable skills per platform
 hermes skills check         Check for updates
@@ -126,7 +126,11 @@ hermes skills update        Update outdated skills
 hermes skills uninstall N   Remove a hub skill
 hermes skills publish PATH  Publish to registry
 hermes skills browse        Browse all available skills
-hermes skills tap add REPO  Add a GitHub repo as skill source
+```
+
+#### Skill Authoring and Curation
+
+Use `hermes-agent` itself as the umbrella for Hermes skill authoring and lifecycle work. For in-repo skills, follow the peer structure: frontmatter at byte 0, `name` + `description`, concise trigger-focused description, overview/when-to-use/actionable body/pitfalls/verification sections, and support files under `references/`, `templates/`, `scripts/`, or `assets/`. User-local skills are created with `skill_manage(action="create")`; in-repo skills should be written under the repository `skills/<category>/<name>/SOURCE_SKILL.md` and committed. Detailed absorbed authoring notes live at `references/absorbed/hermes-agent-skill-authoring/SOURCE_SKILL.md`.
 ```
 
 ### MCP Servers

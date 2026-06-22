@@ -1,9 +1,9 @@
 {
-  "last_report_path": "/root/.hermes/profiles/keith/logs/curator/20260614-172059",
-  "last_run_at": "2026-06-14T17:20:59.105790+00:00",
-  "last_run_duration_seconds": 591.29308,
-  "last_run_summary": "auto: no changes; llm: Completed an umbrella-building consolidation pass.\n\nSummary of work done:\n\n- Created 9 new class-level umbrella skills:\n  - `apple-device-operations`\n  - `ai-coding-agents`\n  - `github-workflows`\n  - `kanban-workflows`\n  - `hermes-operation…\narchived 39 skill(s):\n  • marketplace-leadgen-webapps → direct-booking-marketplace-mvp\n  • short-term-rental-growth → direct-booking-marketplace-mvp\n  • airtable — pruned (stale)\n  • apple-notes — pruned (stale)\n  • apple-reminders — pruned (stale)\n  • architecture-diagram — pruned (stale)\n  • audiocraft-audio-generation — pruned (stale)\n  • claude-code — pruned (stale)\n  • claude-design — pruned (stale)\n  • codebase-inspection — pruned (stale)\n  … and 29 more\nfull report: hermes curator status\nkeep an umbrella stable: hermes curator pin direct-booking-marketplace-mvp",
+  "last_report_path": "/root/.hermes/profiles/keith/logs/curator/20260621-172820",
+  "last_run_at": "2026-06-21T17:28:20.285088+00:00",
+  "last_run_duration_seconds": 458.845125,
+  "last_run_summary": "auto: no changes; llm: Completed the umbrella-building consolidation pass.\n\nSummary:\n- Created 6 new class-level umbrella skills:\n  - `software-development-workflows`\n  - `mlops-workflows`\n  - `research-workflows`\n  - `productivity-document-workflows`\n  - `visual…\narchived 31 skill(s):\n  • hermes-agent-skill-authoring → hermes-agent\n  • arxiv — pruned (stale)\n  • ascii-art — pruned (stale)\n  • ascii-video — pruned (stale)\n  • baoyu-infographic — pruned (stale)\n  • blogwatcher — pruned (stale)\n  • comfyui — pruned (stale)\n  • evaluating-llms-harness — pruned (stale)\n  • excalidraw — pruned (stale)\n  • gif-search — pruned (stale)\n  … and 21 more\nfull report: hermes curator status\nkeep an umbrella stable: hermes curator pin hermes-agent",
   "last_run_summary_shown_at": null,
   "paused": false,
-  "run_count": 1
+  "run_count": 2
 }

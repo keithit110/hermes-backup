@@ -40,6 +40,10 @@ Use this umbrella for operational work around Hermes itself and the user's small
 4. Restart or reload the relevant service.
 5. Verify with `hermes status`, logs, and a real message/tool test when applicable.
 
+## Third-Party Skill Installation Workflow
+
+When installing a non-Hermes GitHub skill into Hermes, port it into the active profile as a Hermes-compatible class-level skill instead of blindly running an upstream assistant-specific installer. Inspect manifests/templates, copy functional scripts/data, adapt paths in `SKILL.md`, preserve provenance under `references/`, then verify with `hermes --profile <profile> skills list`, `skill_view`, and a representative script or `hermes chat -s <skill>` run. See `references/third-party-skill-porting.md`.
+
 ## Backup Workflow
 
 - Decide backup contents: skills, memories, cron, plugins/config minus secrets.

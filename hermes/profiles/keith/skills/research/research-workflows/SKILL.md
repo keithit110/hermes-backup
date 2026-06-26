@@ -57,6 +57,12 @@ Use feed/blog monitoring when the user cares about ongoing change rather than on
 
 For Polymarket-style queries, distinguish market metadata, outcome tokens, order books, prices, and historical time series. Parse double-encoded fields carefully.
 
+For recurring prediction-market monitoring, avoid chat-spam reports. Prefer a dashboard with date slicing, paper-trade P/L, signal tables, and system logs. Label paper trades plainly as simulated. Start arbitrage detection conservatively with binary YES/NO ask-sum checks; do not treat cheap multi-outcome YES baskets as arbitrage unless resolution rules prove the outcomes are mutually exclusive and collectively exhaustive. See `references/polymarket-intel-dashboard.md` for the session-derived checklist and pitfalls.
+
+For recurring Polymarket/prediction-market scanners, use the dashboard pattern in `references/polymarket-intel-dashboard.md`: routine 30-minute jobs should log locally to a DB/UI rather than dumping every run into chat, retain only 60 days of routine data, and reserve Telegram delivery for significant alerts.
+
+For read-only Polymarket intelligence systems, use the pattern in `references/polymarket-intel-scanner.md`: containerized market scanner, arbitrage detector, smart-wallet tracker, information monitor, paper-trading ledger, and Hermes cron wrapper. Start read-only/paper-only; do not add private keys or live trading until signals are proven and explicit execution guardrails exist.
+
 ### Knowledge Bases
 
 For wiki-style work, start by reading the schema/index, then add small linked notes with provenance. Do not create disconnected dumps.

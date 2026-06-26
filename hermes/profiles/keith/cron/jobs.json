@@ -106,15 +106,15 @@
       "schedule_display": "0 13 * * *",
       "repeat": {
         "times": null,
-        "completed": 14
+        "completed": 15
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-11T14:50:54.887175+00:00",
-      "next_run_at": "2026-06-25T13:00:00+00:00",
-      "last_run_at": "2026-06-24T13:01:18.484536+00:00",
+      "next_run_at": "2026-06-26T13:00:00+00:00",
+      "last_run_at": "2026-06-25T13:02:14.116457+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -151,15 +151,15 @@
       "schedule_display": "0 22 * * *",
       "repeat": {
         "times": null,
-        "completed": 13
+        "completed": 14
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-11T14:51:25.288544+00:00",
-      "next_run_at": "2026-06-25T22:00:00+00:00",
-      "last_run_at": "2026-06-24T22:01:18.234177+00:00",
+      "next_run_at": "2026-06-26T22:00:00+00:00",
+      "last_run_at": "2026-06-25T22:01:28.379797+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -196,15 +196,15 @@
       "schedule_display": "every 30m",
       "repeat": {
         "times": null,
-        "completed": 340
+        "completed": 388
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-17T22:16:56.056641+00:00",
-      "next_run_at": "2026-06-25T00:25:49.576027+00:00",
-      "last_run_at": "2026-06-24T23:55:49.576027+00:00",
+      "next_run_at": "2026-06-26T00:25:59.845592+00:00",
+      "last_run_at": "2026-06-25T23:55:59.845592+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -218,7 +218,98 @@
       "enabled_toolsets": null,
       "workdir": null,
       "profile": null
+    },
+    {
+      "id": "1979b309d4db",
+      "name": "Polymarket read-only intel scanner",
+      "prompt": "Run the containerized read-only Polymarket intelligence scanner and deliver its stdout report. This job must not place live trades and must not use or request private keys. It only runs polymarket_intel_run.sh, which uses public Polymarket APIs, logs paper trades in SQLite, and reports market scanner/arbitrage/smart-wallet/info-monitor/paper-trading status.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "polymarket_intel_run.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 30,
+        "display": "every 30m"
+      },
+      "schedule_display": "every 30m",
+      "repeat": {
+        "times": null,
+        "completed": 35
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-25T05:44:32.588615+00:00",
+      "next_run_at": "2026-06-26T00:21:19.610674+00:00",
+      "last_run_at": "2026-06-25T23:51:19.610674+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "terminal"
+      ],
+      "workdir": "/root/polymarket-intel",
+      "profile": "keith"
+    },
+    {
+      "id": "87c151428514",
+      "name": "Polymarket news research agent",
+      "prompt": "You are the Polymarket read-only research agent for Keith. Do not place live trades, do not request credentials, and do not use private keys. Use only public information. Task each run:\n\n1. Read /root/polymarket-intel/data/polymarket_intel.sqlite using sqlite3 or Python.\n2. Pull the latest 10 info_items and top near-resolution markets from the DB. Only consider markets with end_date within 2 days.\n3. Pick at most 3 news/info items that could plausibly affect a near-resolution Polymarket market.\n4. Use web_search/web_extract to research authoritative/current sources for each item. Prefer official sources over articles.\n5. For each researched item, write a concise markdown note to /root/polymarket-intel/logs/research_notes.md with:\n   - UTC timestamp\n   - linked news/info item\n   - related market if any\n   - recommendation: IGNORE, WATCH, or PAPER_BET\n   - confidence 0-100\n   - reasoning in plain English\n   - source URLs\n6. Only if confidence >= 80, resolution is within 2 days, and the recommendation is PAPER_BET, insert a PAPER-ONLY row into the SQLite paper_trades table with source='news_research_agent', status='open', kind='research_based_paper_bet', entry_cost=current observed price if available, current_value=entry_cost, pnl_pct=0, target_profit_pct=0.10, and details_json containing the rationale and source URLs. If you cannot identify the exact token/price from the existing markets table, do not insert a trade; write WATCH instead.\n7. If there is no actionable research, append a short note saying no actionable research found.\n\nKeep the output local. Final response should be a short summary of what you appended and whether any paper-only trade was inserted.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 120,
+        "display": "every 120m"
+      },
+      "schedule_display": "every 120m",
+      "repeat": {
+        "times": null,
+        "completed": 5
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-25T15:21:06.400154+00:00",
+      "next_run_at": "2026-06-26T01:27:41.702861+00:00",
+      "last_run_at": "2026-06-25T23:27:41.702861+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "terminal",
+        "web"
+      ],
+      "workdir": "/root/polymarket-intel",
+      "profile": "keith"
     }
   ],
-  "updated_at": "2026-06-24T23:55:49.576501+00:00"
+  "updated_at": "2026-06-25T23:55:59.845936+00:00"
 }

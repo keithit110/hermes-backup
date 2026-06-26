@@ -5,3 +5,5 @@ When Keith asks about persisted memory or backups, distinguish USER.md (user pre
 For Cebu Direct Stays, Keith prefers avoiding full host accounts/dashboard early; for features like availability calendars, favor admin-managed/manual updates, private magic-link editing, or iCal import over requiring hosts to create profiles.
 §
 Keith's scheduled TLDR news briefings should include latest AI updates and use only accessible, working sources; inaccessible/paywalled/problematic sources should be skipped or removed rather than retried.
+§
+Keith's Polymarket read-only/paper-trading dashboard lives at /root/polymarket-intel, runs web UI on port 8095 via Docker Compose, stores SQLite data at /root/polymarket-intel/data/polymarket_intel.sqlite, and has cron jobs: scanner job 1979b309d4db (local delivery) and research agent job 87c151428514 (local delivery). The scanner must remain no-live-trading/no-private-keys unless Keith explicitly changes scope.

@@ -152,6 +152,8 @@ git@github.com-<project>:OWNER/REPO.git
 
 ## Pitfalls
 
+- For monitoring/reporting apps, do not rely on recurring chat dumps as the primary interface. If output can pile up for days, put logs, P/L/state, filters, and exports in a web dashboard; reserve chat for exceptional alerts.
+- Data dashboards must answer the user's first-order questions in plain English before showing dense tables: what is open, what changed, whether money is real or simulated, what each button/tab does, and what action is expected.
 - Do not expose on port 80 if another service already owns it; use `8080:80` first, then add reverse proxy.
 - For static password generators, avoid server-side secrets entirely; everything in the image is public to clients.
 - Verify the app in Docker before configuring DNS/HTTPS.

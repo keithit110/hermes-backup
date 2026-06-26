@@ -1,4 +1,4 @@
-Keith prefers concise, no-BS answers with direct pushback. For website changes, validate live/mobile browser behavior; screenshots are source of truth. UI motion should be noticeable but tasteful. For hero/backgrounds, offer numbered premium image options before applying.
+Keith prefers concise, no-BS pushback. For dashboards, screenshots are source of truth; prefer web UI with filters/logs/P&L/state over Telegram dumps. For Polymarket, consider only instant/same-day/≤2-day markets; smart-wallet tracking should drive paper copy-trade/research logic.
 §
 Keith is an infrastructure engineer and database administrator. His main experience is managing SQL Server, and his team is transitioning to Aurora PostgreSQL on AWS. He is less familiar with Aurora and AWS and may need help with those topics.
 §

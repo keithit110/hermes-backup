@@ -106,18 +106,18 @@
       "schedule_display": "0 13 * * *",
       "repeat": {
         "times": null,
-        "completed": 15
+        "completed": 16
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-11T14:50:54.887175+00:00",
-      "next_run_at": "2026-06-26T13:00:00+00:00",
-      "last_run_at": "2026-06-25T13:02:14.116457+00:00",
+      "next_run_at": "2026-06-27T13:00:00+00:00",
+      "last_run_at": "2026-06-26T13:02:57.952441+00:00",
       "last_status": "ok",
       "last_error": null,
-      "last_delivery_error": null,
+      "last_delivery_error": "delivery error: Telegram send failed: Timed out",
       "deliver": "origin",
       "origin": {
         "platform": "telegram",
@@ -151,15 +151,15 @@
       "schedule_display": "0 22 * * *",
       "repeat": {
         "times": null,
-        "completed": 14
+        "completed": 15
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-11T14:51:25.288544+00:00",
-      "next_run_at": "2026-06-26T22:00:00+00:00",
-      "last_run_at": "2026-06-25T22:01:28.379797+00:00",
+      "next_run_at": "2026-06-27T22:00:00+00:00",
+      "last_run_at": "2026-06-26T22:01:16.429839+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -196,15 +196,15 @@
       "schedule_display": "every 30m",
       "repeat": {
         "times": null,
-        "completed": 388
+        "completed": 436
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-17T22:16:56.056641+00:00",
-      "next_run_at": "2026-06-26T00:25:59.845592+00:00",
-      "last_run_at": "2026-06-25T23:55:59.845592+00:00",
+      "next_run_at": "2026-06-27T00:27:45.029275+00:00",
+      "last_run_at": "2026-06-26T23:57:45.029275+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -232,22 +232,22 @@
       "no_agent": true,
       "context_from": null,
       "schedule": {
-        "kind": "interval",
-        "minutes": 30,
-        "display": "every 30m"
+        "kind": "once",
+        "run_at": "2026-06-26T21:55:06.716834+00:00",
+        "display": "once in 15m"
       },
-      "schedule_display": "every 30m",
+      "schedule_display": "once in 15m",
       "repeat": {
         "times": null,
-        "completed": 35
+        "completed": 76
       },
-      "enabled": true,
-      "state": "scheduled",
+      "enabled": false,
+      "state": "completed",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-25T05:44:32.588615+00:00",
-      "next_run_at": "2026-06-26T00:21:19.610674+00:00",
-      "last_run_at": "2026-06-25T23:51:19.610674+00:00",
+      "next_run_at": null,
+      "last_run_at": "2026-06-26T21:56:02.098437+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -267,13 +267,13 @@
     {
       "id": "87c151428514",
       "name": "Polymarket news research agent",
-      "prompt": "You are the Polymarket read-only research agent for Keith. Do not place live trades, do not request credentials, and do not use private keys. Use only public information. Task each run:\n\n1. Read /root/polymarket-intel/data/polymarket_intel.sqlite using sqlite3 or Python.\n2. Pull the latest 10 info_items and top near-resolution markets from the DB. Only consider markets with end_date within 2 days.\n3. Pick at most 3 news/info items that could plausibly affect a near-resolution Polymarket market.\n4. Use web_search/web_extract to research authoritative/current sources for each item. Prefer official sources over articles.\n5. For each researched item, write a concise markdown note to /root/polymarket-intel/logs/research_notes.md with:\n   - UTC timestamp\n   - linked news/info item\n   - related market if any\n   - recommendation: IGNORE, WATCH, or PAPER_BET\n   - confidence 0-100\n   - reasoning in plain English\n   - source URLs\n6. Only if confidence >= 80, resolution is within 2 days, and the recommendation is PAPER_BET, insert a PAPER-ONLY row into the SQLite paper_trades table with source='news_research_agent', status='open', kind='research_based_paper_bet', entry_cost=current observed price if available, current_value=entry_cost, pnl_pct=0, target_profit_pct=0.10, and details_json containing the rationale and source URLs. If you cannot identify the exact token/price from the existing markets table, do not insert a trade; write WATCH instead.\n7. If there is no actionable research, append a short note saying no actionable research found.\n\nKeep the output local. Final response should be a short summary of what you appended and whether any paper-only trade was inserted.",
+      "prompt": "You are Keith's Polymarket read-only research agent. Use the script output as the ONLY starting point. The workflow is bet-first to conserve tokens: if the script says there are no candidates, write an IGNORE note and do not browse/search. If candidates are present, research only the listed candidate markets and their provided research_query values; do not scan broad news across unrelated genres. The candidate generator deliberately searches for tradable <=3-day markets across sports, politics/geopolitics, macro/regulatory, tech/AI/business, weather/events, and general news-driven markets. Crypto is intentionally excluded. Sports is capped and should not dominate when non-sports candidates exist. For each candidate you research, use accessible primary/official/reputable sources where possible, then write a concise note to /root/polymarket-intel/logs/research_notes.md and insert a row into the research_notes SQLite table if appropriate. You may recommend IGNORE, WATCH, or PAPER_BUY, but do not place live trades, do not request credentials, and do not use private keys. Only open/insert a paper trade if: the market resolves within the configured 3-day window, the token_id is exact, confidence is high, source URLs are included, and the reasoning explains why the news creates an edge not already obvious in price. Prefer WATCH over PAPER_BUY when uncertain. Final response should summarize candidates reviewed, sources used, and any paper-only action taken.",
       "skills": [],
       "skill": null,
       "model": null,
       "provider": null,
       "base_url": null,
-      "script": null,
+      "script": "polymarket_research_candidates.py",
       "no_agent": false,
       "context_from": null,
       "schedule": {
@@ -284,15 +284,15 @@
       "schedule_display": "every 120m",
       "repeat": {
         "times": null,
-        "completed": 5
+        "completed": 17
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-25T15:21:06.400154+00:00",
-      "next_run_at": "2026-06-26T01:27:41.702861+00:00",
-      "last_run_at": "2026-06-25T23:27:41.702861+00:00",
+      "next_run_at": "2026-06-27T01:50:35.476554+00:00",
+      "last_run_at": "2026-06-26T23:50:35.476554+00:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -309,7 +309,53 @@
       ],
       "workdir": "/root/polymarket-intel",
       "profile": "keith"
+    },
+    {
+      "id": "fa2705b56898",
+      "name": "Polymarket Strategy Health Check",
+      "prompt": "Run a health check on the Polymarket Intel project at /root/polymarket-intel. Check ALL strategies and report a concise summary.\n\n## Check 1: Container Health\nRun: cd /root/polymarket-intel && docker compose ps --format \"table {{.Name}}\\t{{.Status}}\"\nVerify all 3 containers (vpn, crypto, web) are running and gluetun is healthy.\n\n## Check 2: BTC 5M Directional Strategy\nRun: sqlite3 /root/polymarket-intel/data/polymarket_intel.sqlite \"SELECT COUNT(*) as trades_opened_last_4h, SUM(CASE WHEN status LIKE 'closed%' THEN 1 ELSE 0 END) as closed, SUM(CASE WHEN status='open' THEN 1 ELSE 0 END) as open FROM paper_trades WHERE kind='crypto_5m_late_directional' AND opened_at >= datetime('now', '-4 hours');\"\nAlso run: docker logs polymarket-intel-crypto --tail 30 2>&1 | grep -E 'ENTER|RESOLVE|ERROR|CRASH' || echo \"No critical log events\"\nCheck if engine is actively evaluating (look for LANE2 lines in logs).\n\n## Check 3: Copy Wallet & Copy Consensus Strategies\nRun: sqlite3 -header /root/polymarket-intel/data/polymarket_intel.sqlite \"SELECT kind, COUNT(*) as trades FROM paper_trades WHERE kind IN ('copy_single_high_win_rate_wallet','copy_wallet_consensus') AND opened_at >= datetime('now', '-4 hours') GROUP BY kind;\"\nAlso run: sqlite3 /root/polymarket-intel/data/polymarket_intel.sqlite \"SELECT COUNT(DISTINCT wallet) as scored_wallets, MAX(score) as top_score FROM wallet_scores WHERE scored_at >= datetime('now', '-2 hours');\"\n\n## Check 4: Research Buy Strategy\nRun: sqlite3 /root/polymarket-intel/data/polymarket_intel.sqlite \"SELECT COUNT(*) as research_trades FROM paper_trades WHERE kind='research_paper_buy' AND opened_at >= datetime('now', '-4 hours');\"\n\n## Check 5: Overall P/L Snapshot\nRun: sqlite3 /root/polymarket-intel/data/polymarket_intel.sqlite \"SELECT kind, COUNT(*) as total, SUM(CASE WHEN status LIKE 'closed%' THEN 1 ELSE 0 END) as closed, SUM(CASE WHEN status='open' THEN 1 ELSE 0 END) as open FROM paper_trades WHERE kind != 'crypto_5m_profit_lock_hedge' GROUP BY kind ORDER BY total DESC;\"\n\n## Check 6: Recent Copy Trade Activity\nRun: sqlite3 -header -column /root/polymarket-intel/data/polymarket_intel.sqlite \"SELECT event_slug, entry_cost, status, opened_at FROM paper_trades WHERE kind IN ('copy_single_high_win_rate_wallet','copy_wallet_consensus') AND opened_at >= datetime('now', '-4 hours') ORDER BY opened_at DESC LIMIT 5;\"\n\n## Check 7: VPN\nRun: docker inspect polymarket-intel-vpn --format '{{.State.Health.Status}}'\n\n---\n\nAfter running all checks, compile a concise report in this format:\n\n**Polymarket Health Check \u2014 [current datetime]**\n\n### Containers\n\u2705/\u274c vpn: [status], crypto: [status], web: [status]\n\n### BTC 5M Directional (crypto_5m_late_directional)\n- Trades opened (last 4h): [count], Closed: [count], Open: [count]\n- Engine: [actively evaluating / stalled / errors found]\n- Key log note: [anything notable]\n\n### Copy Wallet (copy_single_high_win_rate_wallet)\n- Trades opened (last 4h): [count]\n- Wallets scored (last 2h): [count], Top score: [score]\n- Recent: [list 2-3 recent trade slugs]\n\n### Copy Consensus (copy_wallet_consensus)\n- Trades opened (last 4h): [count]\n\n### Research Buy\n- Trades opened (last 4h): [count]\n\n### Overall Stats (all time)\n[List each strategy with total/closed/open counts]\n\n### Flags\n[Any issues, warnings, or anomalies \u2014 be direct]\n\nKeep the report concise. No fluff. Highlight anything that needs attention in bold.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 240,
+        "display": "every 240m"
+      },
+      "schedule_display": "every 240m",
+      "repeat": {
+        "times": null,
+        "completed": 1
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-26T21:47:24.123353+00:00",
+      "next_run_at": "2026-06-27T01:48:23.501290+00:00",
+      "last_run_at": "2026-06-26T21:48:23.501290+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "terminal",
+        "file"
+      ],
+      "workdir": null,
+      "profile": null
     }
   ],
-  "updated_at": "2026-06-25T23:55:59.845936+00:00"
+  "updated_at": "2026-06-26T23:57:45.030000+00:00"
 }

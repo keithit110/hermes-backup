@@ -1,9 +1,9 @@
 {
   "agent:main:telegram:dm:8825367018": {
     "session_key": "agent:main:telegram:dm:8825367018",
-    "session_id": "20260625_024725_6fdf9512",
+    "session_id": "20260626_032403_ea9a9d",
     "created_at": "2026-06-25T02:47:25.968397",
-    "updated_at": "2026-06-25T15:25:33.605985",
+    "updated_at": "2026-06-26T23:04:08.937359",
     "display_name": "Keith",
     "platform": "telegram",
     "chat_type": "dm",
@@ -12,7 +12,7 @@
     "cache_read_tokens": 0,
     "cache_write_tokens": 0,
     "total_tokens": 0,
-    "last_prompt_tokens": 193182,
+    "last_prompt_tokens": 82203,
     "estimated_cost_usd": 0.0,
     "cost_status": "unknown",
     "expiry_finalized": false,

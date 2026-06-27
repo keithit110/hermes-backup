@@ -4,8 +4,7 @@ Use this reference when modernizing an existing Django marketplace/listing site,
 
 ## Durable workflow
 
-1. Load the project/domain skill first, then apply UI/UX Pro Max as a visual layer — do not restart the product strategy.
-2. Inspect the actual templates/CSS/JS before editing. For Django sites, expect the key files to be under `templates/`, `static/css/`, and `static/js/`.
+1. Load the project/domain skill first, then apply UI/UX Pro Max as a visual layer — do not restart the product strategy.\n2. For mobile data table patterns, consult `references/mobile-data-table-cards.md` — the pattern of rendering both a `<table>` (desktop) and stacked cards (mobile) from shared data, with CSS media queries hiding/showing the appropriate layout.\n3. Inspect the actual templates/CSS/JS before editing. For Django sites, expect the key files to be under `templates/`, `static/css/`, and `static/js/`.
 3. Make the visual pass concrete, not theoretical:
    - improve type scale and font pairing
    - add glass/gradient/aurora treatment where appropriate

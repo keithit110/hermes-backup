@@ -71,3 +71,66 @@ Use this umbrella for GitHub-backed development operations. It combines auth set
 - [ ] PR/issue URLs captured when created.
 - [ ] CI status checked when relevant.
 - [ ] Diff and tests reviewed before claiming success.
+
+## Secrets-Safe Repo Setup
+
+When initializing a new repo from an existing project directory that contains secrets (`.env` files, API keys, databases, private keys):
+
+### 1. Create a deploy key (not a personal SSH key)
+
+```bash
+ssh-keygen -t ed25519 -C "project-name-hermes" -f /root/.ssh/project_ed25519 -N ""
+cat /root/.ssh/project_ed25519.pub
+```
+
+Add to GitHub repo Settings → Deploy keys → **Allow write access** if pushing is needed.
+
+### 2. SSH config alias
+
+```
+Host github.com-project
+  HostName github.com
+  User git
+  IdentityFile /root/.ssh/project_ed25519
+  IdentitiesOnly yes
+```
+
+### 3. .gitignore MUST exclude all secrets
+
+Minimal secrets exclusions:
+
+```
+.env
+.env.*
+*.pem
+*_ed25519
+*.sqlite
+*.db
+logs/
+__pycache__/
+*.pyc
+```
+
+### 4. Secrets audit before first push
+
+```bash
+# See what's staged
+git diff --cached --name-only
+
+# Scan for secrets in staged content
+git diff --cached | grep -inE '(sk-|pk-|private.key|WIREGUARD|password|token|0x[a-fA-F0-9]{64})' || echo "CLEAN"
+
+# Verify excluded files aren't tracked
+git ls-files --cached | grep -i 'env' || echo "No env files tracked"
+```
+
+### 5. Init and push
+
+```bash
+git init && git branch -M main
+git remote add origin git@github.com-project:OWNER/REPO.git
+git add -A && git status
+# Run audit above
+git commit -m "Initial commit"
+git push origin main
+```

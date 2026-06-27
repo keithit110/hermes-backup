@@ -1,4 +1,4 @@
-Keith prefers concise, no-BS pushback. For dashboards, screenshots are source of truth; prefer web UI with filters/logs/P&L/state over Telegram dumps. For Polymarket, consider only instant/same-day/≤2-day markets; smart-wallet tracking should drive paper copy-trade/research logic.
+For Polymarket: instant/same-day/≤3-day markets. Copy-trade with tiered thresholds — score 90+ wallets get looser filters. Keith demands PROPOSALS before ANY config/parameter change. Never modify settings without explicit go-ahead.
 §
 Keith is an infrastructure engineer and database administrator. His main experience is managing SQL Server, and his team is transitioning to Aurora PostgreSQL on AWS. He is less familiar with Aurora and AWS and may need help with those topics.
 §

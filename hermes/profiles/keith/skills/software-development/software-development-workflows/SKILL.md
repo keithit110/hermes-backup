@@ -86,6 +86,10 @@ Debugging starts with evidence:
 
 Before telling the user a change is ready, inspect the diff and run appropriate checks. Look for hardcoded secrets, shell injection, unsafe deserialization, SQL/string interpolation risks, missing tests, backwards-incompatible API changes, and unhandled failure paths. Prefer specific evidence: command, exit code, and result.
 
+## Signal-Driven / Paper-Trading Bots
+
+When changing bots that open simulated trades from signals, preserve existing strategy lanes unless the user explicitly asks to replace them. If adding a safer/stronger strategy such as consensus, keep the original lane separately identified so results can be compared. Use clear status names that describe bot state rather than implying user intervention. See `references/paper-trading-strategy-bots.md` for candidate-filter, strategy-lane, status-label, and verification patterns.
+
 ## Debuggers
 
 Use runtime debuggers when static inspection stalls:
@@ -108,6 +112,14 @@ Detailed original skill packages, including their support files, are stored unde
 - `references/absorbed/node-inspect-debugger/SOURCE_SKILL.md`
 
 Use those when the umbrella overview is not enough.
+
+## Domain References
+
+- `references/polymarket-paper-trading-safety.md` — use when building or reassessing Polymarket scanners, paper-trading dashboards, or copy-trade logic; includes API surfaces, read-only verification, copy-trade pitfalls, safer paper-copy filters, 5-min BTC crypto engine architecture, and resolution P/L accounting.
+- `references/docker-compose-vpn-glutun.md` — route a Docker Compose service through a VPN (gluetun + Surfshark WireGuard) when a downstream API geoblocks the host IP.
+- `references/crypto-5m-btc-strategy.md` — use when building or modifying the Polymarket BTC 5-minute paper-trading engine; includes slug-based market discovery, VPN setup with gluetun/Surfshark, WebSocket dynamic subscription, Lane 2 (late directional) and Lane 3 (profit-lock hedge) strategies, and resolution checking with outcomePrices parsing.
+- `references/btc-5min-crypto-engine.md` — BTC 5-min paper-trading engine: slug-predicted market discovery (`btc-updown-5m-{epoch}`), dual-WebSocket architecture (Coinbase/Binance + Polymarket Market Channel), Lane 2 late-directional and Lane 3 profit-lock hedge strategies, US geoblock workarounds, and Docker deployment pattern.
+- `references/dashboard-ui-pitfalls.md` — use when building or debugging web dashboards with Chart.js, P/L aggregations, status pills, or strategy summary cards; covers canvas height constraints, sum-vs-average P/L bugs, double-multiplication, status formatting, and tab simplification.
 
 ## Verification Checklist
 

@@ -37,6 +37,8 @@ AI-powered design intelligence for professional web and mobile UI/UX: design sys
 
 For Django/Docker marketplace or listing-site modernization passes, also consult `references/django-docker-marketplace-ui-modernization.md` for a proven workflow: cache-bust static assets, rebuild the Docker image, verify desktop/mobile screenshots, check mobile overflow, and avoid scroll-reveal states that leave critical filter UI invisible.
 
+For mobile data table patterns (rendering stacked cards for mobile while keeping sortable tables for desktop), see `references/mobile-data-table-cards.md` — the pattern of dual rendering with CSS media query toggling.
+
 - UI 看起来"不够专业"，但原因不明确
 - 收到可用性或体验方面的反馈
 - 准备上线前的 UI 质量优化

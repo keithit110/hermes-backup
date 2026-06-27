@@ -49,7 +49,7 @@ If direct `urllib` requests get blocked by Cloudflare/403, retry with a normal `
 Useful initial filters:
 
 - active=true, closed=false
-- close resolution date; for Keith's Polymarket workflow default to instant/same-day/within 2 days and ignore longer-dated markets unless he explicitly asks otherwise
+- close resolution date; for Keith's Polymarket workflow default to instant/same-day/within 3 days and ignore longer-dated markets unless he explicitly asks otherwise
 - minimum liquidity and/or 24h volume
 - enable orderbook only
 - store event slug, title, resolution source, condition ID, token IDs, outcomes, end date, liquidity, volume, top bid/ask/spread
@@ -95,15 +95,18 @@ Track:
 - position sizing and whether entry was early or after the move
 - whether each activity was paper-copied and why/why not
 
-Actionable copy-trade paper rules should be explicit. A conservative starting pattern:
+Actionable copy-trade paper rules should be explicit and should prefer consensus over blind single-wallet copying. A conservative pattern:
 
-- require enough closed-position history, e.g. 20+ closed positions
+- require enough closed-position history, e.g. 50+ closed positions for wallets considered qualified
 - require strong win rate/profitability, e.g. 70%+ win rate or better category-specific evidence
 - prefer BUY activity with identifiable market/outcome/token/price
-- require the market to pass the user's horizon filter, e.g. Keith's instant/same-day/≤2-day rule
+- require the market to pass the user's horizon filter, e.g. Keith's instant/same-day/≤3-day rule
+- block tail-risk/ambiguous props by default: exact score, halftime/1st-half, both-teams-to-score, leading-at-halftime, and similar markets until category-specific evidence justifies them
+- require multiple qualified wallets to converge on the same event/token/outcome before opening a paper copy trade, e.g. 2+ wallets and combined copied size above a minimum such as 100
+- use weighted average observed price as the paper entry for consensus trades
 - open paper trades only; no private keys or live trading unless separately authorized with execution guardrails
 
-Report wallet activity with score/confidence and copy-decision fields, but do not blindly suppress lower-score activity during early discovery because historical scoring may be incomplete.
+Report wallet activity with score/confidence and copy-decision fields, but do not blindly suppress lower-score activity during early discovery because historical scoring may be incomplete. For consensus strategies, store wallet count, wallets, total copied size, weighted entry, filters applied, and signal rows in the paper-trade details JSON so later postmortems can distinguish true consensus from one wallet repeatedly trading.
 
 ## Information monitor and research agent
 
@@ -118,11 +121,14 @@ Deduplicate items by URL/title and store first-seen timestamps.
 
 For a recurring research agent, keep it local-first and evidence-based:
 
-1. Read latest stored info/news items and near-resolution markets.
-2. Research only markets that pass the horizon filter.
-3. Write plain-English notes with recommendation, confidence, reasoning, source URLs, and timestamp.
-4. Insert paper-only research trades only when confidence is high and the market/token/price is unambiguous.
-5. If no qualifying market exists, record `IGNORE` rather than forcing a recommendation.
+1. First fix candidate market discovery. Do not let the research agent trade from weak/stale market discovery; maintain an active near-resolution market table from Gamma markets, Data API activity/trades, CLOB books/prices, and category tags.
+2. Read latest stored info/news items and near-resolution markets.
+3. Prefer primary/official sources before commentary: league/team injury and lineup reports, official result/status pages, CFTC/SEC/Fed/filings, company/protocol blogs, court/government feeds, and reputable breaking-news wires.
+4. Match news to markets using named entities, tags, title similarity, date proximity, and exact token/orderbook availability.
+5. Score the edge before paper trading: source quality, freshness, direct relevance, liquidity/spread, price movement confirmation, smart-wallet/whale confirmation, uncertainty, stale-news penalty, and already-priced-in penalty.
+6. Output one of `IGNORE`, `WATCH`, or `PAPER_BUY`, with confidence, source URLs, exact market/token/side/price, reasoning, and invalidation conditions.
+7. Insert paper-only research trades only when confidence is high and the market/token/price is unambiguous; otherwise record `IGNORE`/`WATCH` rather than forcing a recommendation.
+8. Preserve postmortem fields for every research trade: news URL, news first-seen time, trade-open time, expected catalyst, final outcome, whether the news was actually early, and resulting P/L.
 
 ## Paper trading ledger
 
@@ -137,10 +143,12 @@ Use SQLite/Postgres tables for:
 
 Paper trade rules from Keith's requested pattern:
 
-- Prefer close-resolution markets; avoid waiting weeks when possible.
+- Prefer close-resolution markets; default to instant/same-day/within 3 days unless Keith changes the horizon.
 - Open paper trades only from scanner-approved signals.
 - Close paper trades at +10% mark-to-market before contract end.
-- Otherwise evaluate at/near resolution.
+- Use a stop loss for paper-copy strategies, e.g. -20%, so tail-risk losses are visible before resolution.
+- If the event end time passes before official final settlement data is synced, mark the trade `closed_pending_final_result_sync`; this is not a request for Keith to intervene, it means the bot needs/has not yet completed final-result synchronization.
+- Later, final settlement sync should convert pending rows into `closed_won`, `closed_lost`, or `closed_void_or_unknown` based on official/resolution data.
 - Report whether tracked paper trades are profitable, not just whether opportunities existed.
 
 ## Scheduling with Hermes cron

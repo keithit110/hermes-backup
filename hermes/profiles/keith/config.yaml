@@ -1,7 +1,7 @@
 model:
-  default: gpt-5.5
-  provider: openai-codex
-  base_url: https://chatgpt.com/backend-api/codex
+  default: deepseek-v4-pro
+  provider: deepseek
+  base_url: https://api.deepseek.com
 providers: {}
 fallback_providers: []
 credential_pool_strategies: {}
@@ -462,7 +462,13 @@ approvals:
   mcp_reload_confirm: true
   destructive_slash_confirm: true
 command_allowlist:
+- script execution via heredoc
+- docker compose restart/stop/kill/down (container lifecycle)
 - script execution via -e/-c flag
+- SQL DELETE without WHERE
+- recursive delete
+- execute_code
+- shell command via -c/-lc flag
 quick_commands: {}
 hooks: {}
 hooks_auto_accept: false

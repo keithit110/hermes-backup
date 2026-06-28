@@ -48,3 +48,36 @@ sqlite3 data/polymarket_intel.sqlite "SELECT COUNT(*) FROM paper_trades WHERE ki
 # Chainlink price feed alive?
 docker logs polymarket-intel-crypto --tail 5 2>&1 | grep -c "IGNORE\|entered\|no live"
 ```
+
+## pct_change floor — diagnosing the silent killer
+
+When the engine hasn't placed a trade in hours but BTC *is* moving, the most common culprit is the `pct_change` floor. The engine skips evaluation entirely when BTC hasn't moved enough within the window — it never even computes edge.
+
+### Diagnostic command
+
+```bash
+# Count rejection reasons in recent log lines
+docker logs polymarket-intel-crypto --tail 500 2>&1 | grep "IGNORE" | sort | uniq -c | sort -rn
+```
+
+### Interpretation
+
+| Count | Pattern | Diagnosis |
+|-------|---------|-----------|
+| 450+ | `pct_change X.XX% too close to 0` | BTC moving $20-50/window but floor is calibrated higher. The engine sees movement but dismisses it as noise. **Lower the floor.** |
+| 80+ | `edge_up=X% edge_down=Y% below min` | Floor is fine — edges being computed but failing the 5% threshold OR the ask ≤ 0.85 check. Dig deeper into individual edge values. |
+| 650+ | `Xs outside 60-180s window` | Normal — the entry zone is narrow (2 minutes per 5-min window). 2/5 = 40% of time in zone, 60% of ticks will be out. |
+
+### The real fix: calibrate to current BTC price
+
+```python
+# Old: hardcoded 0.1% = $60 at $60K BTC
+MIN_PCT_CHANGE = 0.001
+
+# New: env-var driven, calibrated lower
+MIN_PCT_CHANGE = 0.0008  # 0.08% = ~$48 at $60K BTC
+```
+
+The absolute dollar threshold ($48 vs $60) matters more than the percentage. As BTC price drifts higher, the same percentage represents a larger dollar move. Recalibrate periodically.
+
+**Always make this an env var** (`CRYPTO_MIN_PCT_CHANGE` in docker-compose.yml, `os.getenv("CRYPTO_MIN_PCT_CHANGE", "0.0008")` in the engine) so it can be tuned without code changes.

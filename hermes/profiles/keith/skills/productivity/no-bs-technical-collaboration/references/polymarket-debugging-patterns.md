@@ -139,3 +139,58 @@ for row in rows:
 ```
 
 A conditional skip buried inside a nested if-else is NOT sufficient — it will be missed when new code paths are added above it. The skip must be the FIRST check in the loop, before any mark-to-market updates, take-profit checks, or expiry closures.
+
+## `closed_pending_final_result_sync` — resolution staleness fix
+
+**Symptom**: Copy trades (smart_wallet_copy, smart_wallet_consensus) stuck as `closed_pending_final_result_sync` for 17+ hours after the event ended. Sports events are resolved by Gamma but the scanner never syncs.
+
+**Root cause**: `sync_final_results()` queries `GET /markets?slug=X` which returns 403. The correct endpoint is `GET /events/slug/{slug}` — same endpoint the crypto engine uses successfully.
+
+**Fix — two parts**:
+
+1. **Query the right endpoint in `sync_final_results()`:**
+```python
+# WRONG (returns 403):
+data = client.get_json(f"{GAMMA}/markets", params={"slug": slug, "limit": 1})
+
+# RIGHT:
+data = client.get_json(f"{GAMMA}/events/slug/{slug}")
+```
+
+2. **Try resolution BEFORE marking pending in the close loop.** In `update_paper_trades()`, before setting status to `closed_pending_final_result_sync`, query Gamma for the outcome:
+```python
+if row["source"] in ("smart_wallet_copy", "smart_wallet_consensus"):
+    # Try to resolve from Gamma API first
+    try:
+        data = client.get_json(f"{GAMMA}/events/slug/{slug}")
+        if isinstance(data, dict) and data.get("markets"):
+            for m in data["markets"]:
+                prices = [d(x) for x in parse_jsonish(m.get("outcomePrices"))]
+                outcomes = [str(x).strip().lower() for x in parse_jsonish(m.get("outcomes"))]
+                for o, p in zip(outcomes, prices):
+                    if p >= Decimal("0.99"):
+                        winner = o
+                        break
+                if winner:
+                    won = winner == wanted.strip().lower()
+                    # Mark as closed_won/closed_lost immediately
+                    break
+    except Exception:
+        pass
+    # Only mark as pending if Gamma didn't have the result yet
+    if not resolved_directly:
+        store.conn.execute("update paper_trades set status='closed_pending_final_result_sync'...")
+```
+
+3. **Matching trades to Gamma markets:** The `event_slug` in `paper_trades` (e.g., `fifwc-ury-esp-2026-06-26-more-markets`) matches the Gamma event slug. But the individual market (e.g., "O/U 3.5 / Under") lives inside `data["markets"]` as a sub-market. Loop through all markets in the event and match on slug substring or question text.
+
+4. **Retroactive fix for stuck trades:**
+```sql
+-- Find them
+SELECT id, event_slug, details_json FROM paper_trades WHERE status='closed_pending_final_result_sync';
+-- Query Gamma per slug, determine won/lost, update:
+UPDATE paper_trades SET status='closed_won', current_value=1.0, pnl_pct=(1.0-entry_cost)/entry_cost WHERE id=X;
+UPDATE paper_trades SET status='closed_lost', current_value=0.0, pnl_pct=-1.0 WHERE id=Y;
+```
+
+**Key insight**: Polymarket's Gamma API has `outcomePrices` like `["1", "0"]` — the outcome with price 1.0 (≥0.99) is the winner. Sports markets resolve immediately after the game ends, even though `end_date` is midnight UTC. The scanner can resolve them immediately by checking Gamma, avoiding the `closed_pending_final_result_sync` limbo entirely.

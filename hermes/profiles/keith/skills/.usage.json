@@ -107,14 +107,14 @@
     "archived_at": null,
     "created_at": "2026-06-17T22:19:25.564333+00:00",
     "created_by": null,
-    "last_patched_at": "2026-06-23T17:42:17.917200+00:00",
-    "last_used_at": "2026-06-23T17:41:52.055668+00:00",
-    "last_viewed_at": "2026-06-23T17:41:52.052848+00:00",
-    "patch_count": 4,
+    "last_patched_at": "2026-06-27T16:16:16.635102+00:00",
+    "last_used_at": "2026-06-27T16:15:00.954185+00:00",
+    "last_viewed_at": "2026-06-27T16:15:00.939493+00:00",
+    "patch_count": 5,
     "pinned": false,
     "state": "active",
-    "use_count": 3,
-    "view_count": 3
+    "use_count": 4,
+    "view_count": 4
   },
   "himalaya": {
     "archived_at": null,
@@ -172,14 +172,14 @@
     "archived_at": null,
     "created_at": "2026-06-08T01:15:50.050062+00:00",
     "created_by": "agent",
-    "last_patched_at": "2026-06-26T21:54:41.119934+00:00",
-    "last_used_at": "2026-06-26T23:04:50.896778+00:00",
-    "last_viewed_at": "2026-06-26T23:04:50.890823+00:00",
-    "patch_count": 19,
+    "last_patched_at": "2026-06-27T15:54:54.410028+00:00",
+    "last_used_at": "2026-06-27T16:15:00.946981+00:00",
+    "last_viewed_at": "2026-06-27T16:15:00.921224+00:00",
+    "patch_count": 21,
     "pinned": false,
     "state": "active",
-    "use_count": 30,
-    "view_count": 30
+    "use_count": 36,
+    "view_count": 36
   },
   "obsidian": {
     "archived_at": null,
@@ -211,14 +211,14 @@
     "archived_at": null,
     "created_at": "2026-06-26T08:34:04.552614+00:00",
     "created_by": "agent",
-    "last_patched_at": "2026-06-26T21:44:22.341074+00:00",
-    "last_used_at": "2026-06-26T21:44:13.302285+00:00",
-    "last_viewed_at": "2026-06-26T21:44:13.297637+00:00",
-    "patch_count": 58,
+    "last_patched_at": "2026-06-27T20:28:04.232363+00:00",
+    "last_used_at": "2026-06-27T20:27:22.029332+00:00",
+    "last_viewed_at": "2026-06-27T20:27:22.023484+00:00",
+    "patch_count": 82,
     "pinned": false,
     "state": "active",
-    "use_count": 36,
-    "view_count": 36
+    "use_count": 44,
+    "view_count": 44
   },
   "research-workflows": {
     "archived_at": null,
@@ -237,14 +237,14 @@
     "archived_at": null,
     "created_at": "2026-06-26T20:44:54.318084+00:00",
     "created_by": null,
-    "last_patched_at": "2026-06-26T21:44:27.118043+00:00",
-    "last_used_at": "2026-06-26T21:43:50.833100+00:00",
-    "last_viewed_at": "2026-06-26T21:43:50.821773+00:00",
-    "patch_count": 1,
+    "last_patched_at": "2026-06-27T03:12:41.980727+00:00",
+    "last_used_at": "2026-06-27T03:12:36.602669+00:00",
+    "last_viewed_at": "2026-06-27T03:12:36.597486+00:00",
+    "patch_count": 2,
     "pinned": false,
     "state": "active",
-    "use_count": 2,
-    "view_count": 2
+    "use_count": 3,
+    "view_count": 3
   },
   "serving-llms-vllm": {
     "archived_at": null,

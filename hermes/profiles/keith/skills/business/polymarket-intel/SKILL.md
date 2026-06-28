@@ -198,9 +198,29 @@ let losses = closedBtc.filter(r => Number(r.pnl_pct||0) <= 0).length;
 
 The Paper Bets table column order is: Market, Side, P/L, Status, Strategy, Shares, Entry, Current, Reason, Opened, Closed, Resolves.
 
-**Shares column**: Always present. Bold (`<b>`) when >1 so high-conviction positions stand out visually. Populated from `paper_trades.shares` (defaults to 1). The engine stores a single row per position — never duplicate rows per share.
+**Shares column**: Always present. Bold (`<b>`) when >1 so high-conviction positions stand out visually. Populated from `paper_trades.shares`. All strategies have minimum 2 shares — crypto engine sets 2-4 via `_shares_from_edge()`, scanner INSERTs hardcode 2 for copy wallet, consensus, and arbitrage.
+
+14. **Pagination**: 20 trades per page with Prev/Next buttons and "Page X of Y (N trades)" indicator. Prev disabled on page 1, Next disabled on last page. Changing filters (strategy, status, side), keyword, or day range resets to page 1. `paperPage` variable and `PAPER_PAGE_SIZE=20` control the slice. `renderPagination()` builds the control bar in a SEPARATE `#paperPagination` div OUTSIDE the scrollable `.table-wrap` — pagination buttons must stay stationary when the table scrolls horizontally. Appending pagination HTML inside the table-wrap causes buttons to scroll with the table.
+
+15. **sync_final_results endpoint 403**: The original code queried `/markets?slug=X` — this endpoint returns 403 from non-browser user agents. The fix: use `/events/slug/{slug}` (same endpoint crypto engine uses). The event object contains all child markets with their `outcomePrices`. Match trades to markets by slug substring or question text. Do NOT check `m.get("closed")` — some events are resolved but the `closed` flag is stale. Check for any outcome with price ≥ 0.99.\n    **Immediate resolution in close loop**: Before marking a trade as `closed_pending_final_result_sync`, try to resolve it immediately by querying Gamma `/events/slug/{slug}`. If the event has a settled market (price ≥ 0.99), mark as `closed_won`/`closed_lost` directly. Only fall back to `closed_pending_final_result_sync` if Gamma doesn't have the result yet. This avoids the \"stuck pending\" state entirely.
+
+16. **Immediate resolution in close loop**: Before marking a trade as `closed_pending_final_result_sync`, try to resolve it immediately by querying Gamma `/events/slug/{slug}`. If the event has a settled market (price ≥ 0.99), mark as `closed_won`/`closed_lost` directly. Only fall back to `closed_pending_final_result_sync` if Gamma doesn't have the result yet. This avoids the "stuck pending" state entirely.
+
+17. **Staleness guard for copy trades** (`COPY_MAX_AGE_MINUTES = 15`): Compare `activity.timestamp` vs `now()` in `smart_copy_candidate()`. Skip signals older than 15 minutes. Prevents copying stale trades after scanner downtime. Current signals are all under 7 minutes — the guard is forward protection only.
+
+18. **TAKE_PROFIT is 0.40 (40%)**: Changed 2026-06-27 (updated from 0.20). All copy wallet, copy consensus, and research paper trades close at +40% mark-to-market gain. Stop-loss stays at -20%. Config: `TAKE_PROFIT: "0.40"` in docker-compose.yml (YAML anchor `&polymarket-env`, inherited by all services). After changing, rebuild scanner: `docker compose build scanner && docker compose up -d scanner --force-recreate`. Old values: 0.10 (caused premature exits) → 0.20 → 0.40.
+
+19. **Share minimums (all strategies)**: Minimum 2 shares for every strategy. Crypto engine tiers: raw edge ≥65% → 4, ≥55% → 3, <55% → 2. Scanner INSERTs hardcode `shares=2` for copy wallet, consensus, and arbitrage. The raw (pre-time-decay) edge is stored in `details_json.raw_edge` and displayed in the dashboard Reason column as `[edge 45.1%]`.
+
+**Tiered thresholds (updated 2026-06-27)**: 90+ wallets now use min_price=0.10 and min_size=5 (loosened from 0.30/15 on 2026-06-27 to capture tennis underdogs at 0.11-0.29 and micro-bets at 5-14 USDC). The 70-89 tier stays strict at 0.67/25. Copy Consensus shares the same tiered filter: a candidate must pass `smart_copy_candidate()` first, then gets checked for multi-wallet agreement.
+
+20. **4-hour health check cron**: Job `fa2705b56898` runs every 4 hours, delivers to Keith's Telegram. Checks all containers, engine status, strategy P/L, VPN IP. Read-only — no trades or config changes.
 
 Open/unrealized trades must show "—" in the table P/L column, not a percentage. The strategy card for a strategy with only open trades must show "N open" count, not a fake -100% or +X% mark-to-market. Only closed/realized trades get percentages. This applies to ALL strategy types.
+
+**Reason column — raw edge display**: When crypto engine trades include `raw_edge` in `details_json`, the dashboard Reason column prepends `[edge 45.1%]` before the trade reason text. This shows the pre-time-decay edge used for share sizing, separate from the boosted edge shown in the reason string. Non-crypto trades (copy wallet, research) don't have `raw_edge` and show the reason unchanged.
+
+**Health check cron**: `fa2705b56898` runs every 4 hours, delivers to this chat. Checks containers, engine status, strategy P/L, VPN IP. Status-only — no action required.
 
 Table formatter: `(v,r) => r.status === 'open' ? '<span class="muted">—</span>' : pct(v)`
 
@@ -274,6 +294,8 @@ Verify engine: `docker logs polymarket-intel-crypto 2>&1 | tail -5` — no Attri
 12. **Misleading "below min 0.05" log message**: When the engine logs `edge_up=-80.8% edge_down=80.9% below min 0.05`, the edge_down of 80.9% TECHNICALLY passes the `>= MIN_EDGE` check. The real rejection is `MAX_ENTRY_PRICE` — `down_ask` has already surged above 0.85 because the market repriced before the engine could enter. The message comes from the else-branch at line 288 which fires when NEITHER direction satisfies BOTH conditions (`edge >= MIN_EDGE AND ask <= MAX_ENTRY_PRICE`). BTC moving clearly → market reprices instantly → engine detects the edge but can't enter at a price above 0.85. This is correct behavior — the engine is protecting against late entries, not missing opportunities.
 13. **No crypto entries during low volatility is normal**: Three filters correctly block entries when BTC is flat: (a) `pct_change` too close to 0 — no directional signal, (b) outside 60-180s window — too early or too late, (c) ask > 0.85 — market already repriced the move. An hour with zero entries during range-bound BTC is the engine working as designed, not a bug. Check `docker logs polymarket-intel-crypto 2>&1 | grep IGNORE` before investigating.
 
+    **pct_change floor**: Set via `CRYPTO_MIN_PCT_CHANGE` env var (default 0.0008 = 0.08%). This is the minimum BTC price movement in a 5-min window before the engine computes edge. Below this, the engine skips (`IGNORE: pct_change too close to 0`). The old hardcoded floor was 0.001 (0.1%), tuned for higher-volatility conditions. At $60K BTC, 0.08% = ~$48 move. The floor prevents 100s of useless evaluations per window when BTC is dead flat. **Only adjust with Keith's approval.** See `references/crypto-engine-debugging.md` for the full diagnostic workflow when the engine stops producing trades.
+
 ### CRITICAL: Backend and frontend must apply the SAME filters
 
 When a strategy is retired (e.g., hedging removed), BOTH the frontend and backend must exclude its trades. A mismatch causes the overall metric card and the strategy cards to show different numbers — the single most common cause of "the numbers don't add up" complaints.
@@ -295,7 +317,7 @@ When a strategy is retired (e.g., hedging removed), BOTH the frontend and backen
 ### Architecture
 
 - **Directional-only**: Lane 3 (hedging) removed. Engine only buys UP or DOWN based on edge.
-- **Variable shares**: 3 shares at edge ≥55%, 2 shares at edge ≥48%, 1 share otherwise. Tiers calibrated to the engine's actual edge range (43-70%). The old thresholds (≥20% → 3, ≥10% → 2) were too low — every trade triggered 3 shares because the model never enters below ~43% edge. Changed 2026-06-26 after user identified that `t=1.0x` always mapped to 3 shares.
+- **Variable shares**: 4 shares at edge ≥65%, 3 shares at edge ≥55%, 2 shares minimum (all strategies). Tiers recalibrated 2026-06-26: floor raised from 1→2 shares minimum, added 4-share tier at 65%. The raw (pre-time-decay) edge is now logged in `details_json.raw_edge` and displayed in the dashboard Reason column as `[edge 45.1%]`.
 - **Shares column**: `paper_trades.shares INTEGER DEFAULT 1`. Bold in table when >1. Backfilled from legacy duplicate-row trades by keeping the MIN(id) row, deleting the rest, and setting `shares = COUNT(*)`.
 - **3-second evaluation**: `evaluate_and_act()` runs every ~3s (fast, math-only). Slow API calls (`refresh_token_ids()`, `resolve_pending_trades()`) only every 3rd cycle (~9s).
 - **BTC acceleration tracking**: Records `btc_halfway_price` at ~150s mark. Compares first-half vs second-half movement. Same direction in both → +5% confidence boost. Reversal → -8% penalty.
@@ -381,11 +403,15 @@ Job ID: `87c151428514` — runs every 120 minutes, generates candidates then res
 
 The word "ai" appears in many sports player names (e.g., "Jai", "Kai"). Do NOT use "ai" alone as a tech classifier keyword — it floods the tech bucket with sports. Use "openai", "anthropic" (proper nouns) instead.
 
-## Copy trading — tiered thresholds + wallet scoring (2026-06-26)
+## Copy trading — tiered thresholds + wallet scoring (2026-06-27)
 
-The scanner copies high-performing Polymarket wallets into paper trades. **Tiered filtering**: wallets scoring 90+ (≥90% win rate, ≥20 closed) get looser thresholds (min price 0.30, min size 15) because their track record justifies trust at lower prices/sizes. Lower-score wallets keep strict FIFA-tuned filters (0.67/25).
+The scanner copies high-performing Polymarket wallets into paper trades. **Tiered filtering**: wallets scoring 90+ (≥90% win rate, ≥20 closed) get looser thresholds (min price 0.10, min size 5) because their track record justifies trust at lower prices/sizes. Lower-score wallets keep strict FIFA-tuned filters (0.67/25).
 
 **Scoring**: `wallet_stats()` queries `/closed-positions?user=X&limit=100` — this API shows BOTH wins (realizedPnl > 0) and losses (realizedPnl < 0). Score = win_rate × 100, capped at 50 for <20 closed. Realized PnL ($) is NOT in the score. Runs every **15 min** via cron `1979b309d4db` (changed from 30 min 2026-06-26 for faster detection of new hot wallets).
+
+**Cron pitfall — `"once"` vs `"every"`**: `"once in 15m"` is a ONE-SHOT delay — fires 15 minutes from now, one time only. After it completes, `state: completed, enabled: false`. Trades sit open for hours because the close loop never runs again. Always verify recurring cron jobs with `"every"` prefix: `"every 15m"`, `"every 4h"`, `"0 9 * * *"`.
+
+**Tiered thresholds (updated 2026-06-27)**: 90+ wallets now use min_price=0.10 and min_size=5 (loosened from 0.30/15 on 2026-06-27 to capture tennis underdogs at 0.11-0.29 and micro-bets at 5-14 USDC). The 70-89 tier stays strict at 0.67/25. Copy Consensus shares the same tiered filter: a candidate must pass `smart_copy_candidate()` first, then gets checked for multi-wallet agreement.
 
 **Scoring accuracy — losses ARE detected**: The `/closed-positions` endpoint is Polymarket's settlement ledger. Every closed position has a `realizedPnl` field — positive for wins, negative for losses. This is DIFFERENT from the activity feed (which can't show losses because losing positions expire with no on-chain claim). Losses correctly lower a wallet's win rate and score.
 
@@ -404,3 +430,4 @@ Full details: `references/copy-trading-architecture.md`.
 - `references/binance-vs-chainlink-mismatch.md` — Binance vs Chainlink BTC price data source mismatch: engine uses Binance, Polymarket resolves on Chainlink. Reproduced incident from 2026-06-26 where 3-share UP bet lost -100% because Binance showed +0.14% but Chainlink resolved Down. Critical for going live — trading on wrong data source is gambling.
 - `references/vpn-proxy-setup.md` — Gluetun HTTP proxy configuration so ALL containers (scanner, web, crypto) route through UK VPN. Required for Polymarket International (non-US) real trading. Step-by-step setup, verification commands, and caveats.
 - `references/github-repo-setup.md` — GitHub repo setup: deploy key creation, SSH config, .gitignore (excluding .env*, data/*.sqlite, logs/), secrets audit checklist, and push workflow. Load when initializing the repo or before pushing to verify no secrets leaked.
+- `references/crypto-engine-debugging.md` — **Diagnostic workflow when the crypto engine stops producing trades** for extended periods. Step-by-step: check last trade, identify dominant rejection filter (pct_change floor vs window timing vs edge/max_ask), verify engine health, check BTC volatility. Decision tree for resolution. Load when Keith reports "crypto engine hasn't made any trades."

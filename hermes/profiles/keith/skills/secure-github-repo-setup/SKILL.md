@@ -55,14 +55,14 @@ Use when: initializing a new GitHub repo for a project where secrets must never 
    ```
 
 6. **Verify staged files** with `git add -A && git status` — confirm zero secrets before committing
-1. `git add -A && git status` — verify staged files
-2. **Secrets audit**: confirm NO `.env*`, `*.pem`, `*_ed25519`, `data/*.sqlite`, or `logs/` files in staging
-3. Commit and push:
+
+7. **Commit and push**:
    ```bash
    git remote add origin git@github.com-projectname:OWNER/REPO.git
-   git push -u origin main
+   git add -A && git commit -m "initial commit: MVP" && git push -u origin main
    ```
-4. **Post-push verification**: `git ls-tree --name-only HEAD` — confirm only intended files are on remote. If any secret file appears, it's in git history and must be removed urgently.
+
+8. **Post-push verification**: `git ls-tree --name-only HEAD` — confirm only intended files are on remote. If any secret file appears, it's in git history and must be removed urgently.
 
 ## Pitfalls
 - `.gitignore` must be created BEFORE `git add` — once a secret is committed, it stays in history even if removed later

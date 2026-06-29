@@ -1,5 +1,3 @@
-For Polymarket: instant/same-day/≤3-day markets. Copy-trade with tiered thresholds — score 90+ wallets get looser filters. Keith demands PROPOSALS before ANY config/parameter change. Never modify settings without explicit go-ahead.
-§
 Keith is an infrastructure engineer and database administrator. His main experience is managing SQL Server, and his team is transitioning to Aurora PostgreSQL on AWS. He is less familiar with Aurora and AWS and may need help with those topics.
 §
 Keith created his Hermes bot to explore side projects outside his DBA career, especially AI-assisted website creation, hosting, and monetization.
@@ -10,4 +8,4 @@ Keith has five Airbnb condominium properties on Cebu island, Philippines: four s
 §
 Keith does not want to share credentials or secrets in chat; he prefers manual credential setup on the VPS with step-by-step instructions.
 §
-Keith intends his wife’s Hermes usage to be isolated in a separate profile/bot with separate memory, SOUL.md, skills, sessions, and gateway config.
+Keeps trading strategies completely separate — independent sources/tracking, no shared gating. Never mix directions in docs. Prefers step-by-step price walkthroughs. When given options, prefers a clear recommendation. Security-conscious — never put creds in git-tracked files. Polymarket: proposals first, UI verified via Playwright (390×844).

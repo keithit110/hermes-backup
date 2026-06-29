@@ -39,6 +39,12 @@ For Django/Docker marketplace or listing-site modernization passes, also consult
 
 For mobile data table patterns (rendering stacked cards for mobile while keeping sortable tables for desktop), see `references/mobile-data-table-cards.md` — the pattern of dual rendering with CSS media query toggling.
 
+For compacting dashboard summary panels to reduce vertical scrolling, see `references/dashboard-compact-panels.md` — covers strategy-card auto-fill grids, main metric card compaction, filter row anti-stacking (removing mobile width:100%), inline headers, collapsed explain sections, and whole-page density tightening.
+
+For replacing full-time dashboard filter bars with slide-out drawer modals (filter icon trigger → overlay-backed panel → saves ~40% vertical chrome), see `references/filter-drawer-modal.md` — includes CSS for slide animation, JS for toggle/open/close/Escape/auto-close-on-select, active-filter badge, and Flask inline-template overhaul technique.
+
+For sortable dashboard table UX patterns (sort-click event isolation with stopPropagation, sticky-bottom pagination via CSS flex with height:100dvh, centered floating filter modals with backdrop-blur, JS syntax verification with node -c after raw-string template changes), see `references/dashboard-table-ux.md`.
+
 - UI 看起来"不够专业"，但原因不明确
 - 收到可用性或体验方面的反馈
 - 准备上线前的 UI 质量优化

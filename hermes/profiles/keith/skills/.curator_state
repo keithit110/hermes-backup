@@ -1,9 +1,9 @@
 {
-  "last_report_path": "/root/.hermes/profiles/keith/logs/curator/20260621-172820",
-  "last_run_at": "2026-06-21T17:28:20.285088+00:00",
-  "last_run_duration_seconds": 458.845125,
-  "last_run_summary": "auto: no changes; llm: Completed the umbrella-building consolidation pass.\n\nSummary:\n- Created 6 new class-level umbrella skills:\n  - `software-development-workflows`\n  - `mlops-workflows`\n  - `research-workflows`\n  - `productivity-document-workflows`\n  - `visual…\narchived 31 skill(s):\n  • hermes-agent-skill-authoring → hermes-agent\n  • arxiv — pruned (stale)\n  • ascii-art — pruned (stale)\n  • ascii-video — pruned (stale)\n  • baoyu-infographic — pruned (stale)\n  • blogwatcher — pruned (stale)\n  • comfyui — pruned (stale)\n  • evaluating-llms-harness — pruned (stale)\n  • excalidraw — pruned (stale)\n  • gif-search — pruned (stale)\n  … and 21 more\nfull report: hermes curator status\nkeep an umbrella stable: hermes curator pin hermes-agent",
+  "last_report_path": "/root/.hermes/profiles/keith/logs/curator/20260628-182215",
+  "last_run_at": "2026-06-28T18:22:15.567814+00:00",
+  "last_run_duration_seconds": 388.885619,
+  "last_run_summary": "auto: no changes; llm: ## Consolidation Pass — Summary\n\n### What happened\n\n**1. Content bleed fix: `no-bs-technical-collaboration` ↔ `polymarket-intel`**\n\nThe no-bs skill had massive content duplication (~60% of its body was polymarket-specific rules: P/L formula…\narchived 5 skill(s):\n  • dogfood — pruned (stale)\n  • godmode — pruned (stale)\n  • openhue — pruned (stale)\n  • xurl — pruned (stale)\n  • yuanbao — pruned (stale)\nfull report: hermes curator status",
   "last_run_summary_shown_at": null,
   "paused": false,
-  "run_count": 2
+  "run_count": 3
 }

@@ -116,11 +116,14 @@ Use those when the umbrella overview is not enough.
 ## Domain References
 
 - `references/polymarket-paper-trading-safety.md` — use when building or reassessing Polymarket scanners, paper-trading dashboards, or copy-trade logic; includes API surfaces, read-only verification, copy-trade pitfalls, safer paper-copy filters, 5-min BTC crypto engine architecture, and resolution P/L accounting.
-- `references/docker-compose-vpn-glutun.md` — route a Docker Compose service through a VPN (gluetun + Surfshark WireGuard) when a downstream API geoblocks the host IP.
+- `references/docker-compose-vpn-glutun.md` — route a Docker Compose service through a VPN (gluetun + Surfshark WireGuard); includes Polymarket CLOB geoblock country list (UK, US, France blocked — use Netherlands, Switzerland, Canada).
 - `references/crypto-5m-btc-strategy.md` — use when building or modifying the Polymarket BTC 5-minute paper-trading engine; includes slug-based market discovery, VPN setup with gluetun/Surfshark, WebSocket dynamic subscription, Lane 2 (late directional) and Lane 3 (profit-lock hedge) strategies, and resolution checking with outcomePrices parsing.
 - `references/btc-5min-crypto-engine.md` — BTC 5-min paper-trading engine: slug-predicted market discovery (`btc-updown-5m-{epoch}`), dual-WebSocket architecture (Coinbase/Binance + Polymarket Market Channel), Lane 2 late-directional and Lane 3 profit-lock hedge strategies, US geoblock workarounds, and Docker deployment pattern.
 - `references/dashboard-ui-pitfalls.md` — use when building or debugging web dashboards with Chart.js, P/L aggregations, status pills, or strategy summary cards; covers canvas height constraints, sum-vs-average P/L bugs, double-multiplication, status formatting, and tab simplification.
-
+- `references/live-vs-paper-trading-separation.md` — use when building Polymarket dashboards that track both paper and live real-money trades; covers `is_live` DB flag, split stats strips, Trade Type filter drawer, and live P/L summary cards that only appear when real orders exist.
+- `references/polymarket-wallet-research.md` — methodology for finding profitable Polymarket wallets across BTC 5-min markets; covers Telonex, Polymarket Analytics, predicts.guru, Data API, Gamma API, Dune, and Bitquery sources; wallet strategy archetypes (sniper, noise farmer, hybrid maker/taker).
+- `references/paper-trading-strategy-bots.md` — candidate-filter, strategy-lane, status-label, and verification patterns for signal-driven paper-trading bots.
+- `references/playwright-local-verification.md` — use when the Browserbase tool cannot reach the VPS (502 on non-standard ports); provides the Playwright local screenshot workflow, JS syntax check (`node -c`), Docker rebuild checklist, and raw-string JS escaping pitfall.
 ## Verification Checklist
 
 - [ ] Picked the correct workflow branch instead of mixing all of them.

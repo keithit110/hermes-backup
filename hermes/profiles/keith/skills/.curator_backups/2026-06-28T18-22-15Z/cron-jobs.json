@@ -1,0 +1,361 @@
+{
+  "jobs": [
+    {
+      "id": "8a6ba342e432",
+      "name": "BPI condo loan payment reminder",
+      "prompt": "Send Keith a high-visibility reminder to pay his BPI bank loan in the Philippines for his condo. Make it attention-grabbing for Telegram using red alert emojis/symbols and bold text. Mention that it is due every 4th/5th of the month and this is the scheduled 10:00 PM UTC reminder. Do not ask questions; just deliver the reminder.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 22 4,5 * *",
+        "display": "0 22 4,5 * *"
+      },
+      "schedule_display": "0 22 4,5 * *",
+      "repeat": {
+        "times": null,
+        "completed": 0
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-10T15:20:08.316996+00:00",
+      "next_run_at": "2026-07-04T22:00:00+00:00",
+      "last_run_at": null,
+      "last_status": null,
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "a9a90207e292",
+      "name": "Sterling Bank Cityscape condo loan payment reminder",
+      "prompt": "Send Keith a high-visibility reminder to pay his Sterling Bank bank loan for his Cityscape condo. Make it attention-grabbing for Telegram using red alert emojis/symbols and bold text. Mention that it is due every 19th/20th of the month and this is the scheduled 10:00 PM UTC reminder. Do not ask questions; just deliver the reminder.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 22 19,20 * *",
+        "display": "0 22 19,20 * *"
+      },
+      "schedule_display": "0 22 19,20 * *",
+      "repeat": {
+        "times": null,
+        "completed": 2
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-10T15:20:15.790342+00:00",
+      "next_run_at": "2026-07-19T22:00:00+00:00",
+      "last_run_at": "2026-06-20T22:00:21.006371+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "fa0e6b68516b",
+      "name": "Morning USA + geopolitics + AI news TLDR (9am Eastern / 13:00 UTC)",
+      "prompt": "You are Keith's daily morning news briefer. A pre-run script has already collected accessible source snippets from working RSS/source feeds. Use ONLY that script output as your factual source material.\n\nDo NOT call tools. Do NOT invent facts. If a section has weak source material, say that briefly instead of filling with guesses.\n\nLabel this as the 9 AM Eastern briefing.\n\nPrimary focus, in priority order:\n1. USA news: federal government, Congress, White House, Supreme Court/legal, economy/markets/Fed, regulation, immigration, national security, and major state-level stories only when nationally relevant.\n2. Geopolitics: wars/conflicts, diplomacy, NATO/Europe, China/Taiwan, Russia/Ukraine, Middle East, Indo-Pacific, trade/security alliances, sanctions, cyber/security.\n3. AI/technology: major AI model/company releases, regulation, safety/security, chips/semiconductors, cloud/datacenter buildout, enterprise adoption, material lawsuits, open-source model shifts, and market-moving AI business news.\n\nOutput format:\n## News TLDR \u2014 Morning Briefing (9 AM Eastern)\n- **USA \u2014 top items:** 4\u20136 bullets, each 1\u20133 sentences.\n- **Geopolitics \u2014 top items:** 3\u20135 bullets, each 1\u20133 sentences.\n- **AI / tech \u2014 top items:** 3\u20135 bullets, each 1\u20133 sentences.\n- **Watchlist:** 2\u20134 developing stories.\n- **Source health:** one short line summarizing which feeds worked and which were excluded/removed.\n\nKeep it concise, useful, and no-BS. Include source names inline like (BBC, NPR, TechCrunch).",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "news_brief_sources.py",
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 13 * * *",
+        "display": "0 13 * * *"
+      },
+      "schedule_display": "0 13 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 18
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-11T14:50:54.887175+00:00",
+      "next_run_at": "2026-06-29T13:00:00+00:00",
+      "last_run_at": "2026-06-28T13:00:53.006681+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "file"
+      ],
+      "workdir": null,
+      "profile": "keith"
+    },
+    {
+      "id": "7b3456e39794",
+      "name": "Evening USA + geopolitics + AI news TLDR (6pm Eastern / 22:00 UTC)",
+      "prompt": "You are Keith's evening news briefer. A pre-run script has already collected accessible source snippets from working RSS/source feeds. Use ONLY that script output as your factual source material.\n\nDo NOT call tools. Do NOT invent facts. If a section has weak source material, say that briefly instead of filling with guesses.\n\nLabel this as the 6 PM Eastern briefing.\n\nPrimary focus, in priority order:\n1. USA news: federal government, Congress, White House, Supreme Court/legal, economy/markets/Fed, regulation, immigration, national security, and major state-level stories only when nationally relevant.\n2. Geopolitics: wars/conflicts, diplomacy, NATO/Europe, China/Taiwan, Russia/Ukraine, Middle East, Indo-Pacific, trade/security alliances, sanctions, cyber/security.\n3. AI/technology: major AI model/company releases, regulation, safety/security, chips/semiconductors, cloud/datacenter buildout, enterprise adoption, material lawsuits, open-source model shifts, and market-moving AI business news.\n4. For the evening edition, emphasize fresh developments since the morning when obvious from timestamps.\n\nOutput format:\n## News TLDR \u2014 Evening Briefing (6 PM Eastern)\n- **USA \u2014 top items:** 4\u20136 bullets, each 1\u20133 sentences.\n- **Geopolitics \u2014 top items:** 3\u20135 bullets, each 1\u20133 sentences.\n- **AI / tech \u2014 top items:** 3\u20135 bullets, each 1\u20133 sentences.\n- **Watchlist:** 2\u20134 developing stories.\n- **Source health:** one short line summarizing which feeds worked and which were excluded/removed.\n\nKeep it concise, useful, and no-BS. Include source names inline like (BBC, NPR, TechCrunch).",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "news_brief_sources.py",
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 22 * * *",
+        "display": "0 22 * * *"
+      },
+      "schedule_display": "0 22 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 16
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-11T14:51:25.288544+00:00",
+      "next_run_at": "2026-06-28T22:00:00+00:00",
+      "last_run_at": "2026-06-27T22:03:40.008102+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "file"
+      ],
+      "workdir": null,
+      "profile": "keith"
+    },
+    {
+      "id": "35c5bedd5c25",
+      "name": "TLDR cron failure/skipped watchdog",
+      "prompt": "Script-only watchdog. It should stay silent unless the morning/evening TLDR news cron job is failed, skipped, overdue, disabled, or has a delivery error.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "tldr_cron_watchdog.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 30,
+        "display": "every 30m"
+      },
+      "schedule_display": "every 30m",
+      "repeat": {
+        "times": null,
+        "completed": 520
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-17T22:16:56.056641+00:00",
+      "next_run_at": "2026-06-28T18:28:15.066740+00:00",
+      "last_run_at": "2026-06-28T17:58:15.066740+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "87c151428514",
+      "name": "Polymarket news research agent",
+      "prompt": "You are Keith's Polymarket read-only research agent. Use the script output as the ONLY starting point. The workflow is bet-first to conserve tokens: if the script says there are no candidates, write an IGNORE note and do not browse/search. If candidates are present, research only the listed candidate markets and their provided research_query values; do not scan broad news across unrelated genres. The candidate generator deliberately searches for tradable <=3-day markets across sports, politics/geopolitics, macro/regulatory, tech/AI/business, weather/events, and general news-driven markets. Crypto is intentionally excluded. Sports is capped and should not dominate when non-sports candidates exist. For each candidate you research, use accessible primary/official/reputable sources where possible, then write a concise note to /root/polymarket-intel/logs/research_notes.md and insert a row into the research_notes SQLite table if appropriate. You may recommend IGNORE, WATCH, or PAPER_BUY, but do not place live trades, do not request credentials, and do not use private keys. Only open/insert a paper trade if: the market resolves within the configured 3-day window, the token_id is exact, confidence is high, source URLs are included, and the reasoning explains why the news creates an edge not already obvious in price. Prefer WATCH over PAPER_BUY when uncertain. Final response should summarize candidates reviewed, sources used, and any paper-only action taken.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "polymarket_research_candidates.py",
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 120,
+        "display": "every 120m"
+      },
+      "schedule_display": "every 120m",
+      "repeat": {
+        "times": null,
+        "completed": 37
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-25T15:21:06.400154+00:00",
+      "next_run_at": "2026-06-28T19:54:44.040256+00:00",
+      "last_run_at": "2026-06-28T17:54:44.040256+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "terminal",
+        "web"
+      ],
+      "workdir": "/root/polymarket-intel",
+      "profile": "keith"
+    },
+    {
+      "id": "fa2705b56898",
+      "name": "Polymarket Strategy Health Check",
+      "prompt": "Run a health check on the Polymarket Intel project at /root/polymarket-intel. Check ALL strategies and report a concise summary.\n\n## Check 1: Container Health\nRun: cd /root/polymarket-intel && docker compose ps --format \"table {{.Name}}\\t{{.Status}}\"\nVerify all 3 containers (vpn, crypto, web) are running and gluetun is healthy.\n\n## Check 2: BTC 5M Directional Strategy\nRun: sqlite3 /root/polymarket-intel/data/polymarket_intel.sqlite \"SELECT COUNT(*) as trades_opened_last_4h, SUM(CASE WHEN status LIKE 'closed%' THEN 1 ELSE 0 END) as closed, SUM(CASE WHEN status='open' THEN 1 ELSE 0 END) as open FROM paper_trades WHERE kind='crypto_5m_late_directional' AND opened_at >= datetime('now', '-4 hours');\"\nAlso run: docker logs polymarket-intel-crypto --tail 30 2>&1 | grep -E 'ENTER|RESOLVE|ERROR|CRASH' || echo \"No critical log events\"\nCheck if engine is actively evaluating (look for LANE2 lines in logs).\n\n## Check 3: Copy Wallet & Copy Consensus Strategies\nRun: sqlite3 -header /root/polymarket-intel/data/polymarket_intel.sqlite \"SELECT kind, COUNT(*) as trades FROM paper_trades WHERE kind IN ('copy_single_high_win_rate_wallet','copy_wallet_consensus') AND opened_at >= datetime('now', '-4 hours') GROUP BY kind;\"\nAlso run: sqlite3 /root/polymarket-intel/data/polymarket_intel.sqlite \"SELECT COUNT(DISTINCT wallet) as scored_wallets, MAX(score) as top_score FROM wallet_scores WHERE scored_at >= datetime('now', '-2 hours');\"\n\n## Check 4: Research Buy Strategy\nRun: sqlite3 /root/polymarket-intel/data/polymarket_intel.sqlite \"SELECT COUNT(*) as research_trades FROM paper_trades WHERE kind='research_paper_buy' AND opened_at >= datetime('now', '-4 hours');\"\n\n## Check 5: Overall P/L Snapshot\nRun: sqlite3 /root/polymarket-intel/data/polymarket_intel.sqlite \"SELECT kind, COUNT(*) as total, SUM(CASE WHEN status LIKE 'closed%' THEN 1 ELSE 0 END) as closed, SUM(CASE WHEN status='open' THEN 1 ELSE 0 END) as open FROM paper_trades WHERE kind != 'crypto_5m_profit_lock_hedge' GROUP BY kind ORDER BY total DESC;\"\n\n## Check 6: Recent Copy Trade Activity\nRun: sqlite3 -header -column /root/polymarket-intel/data/polymarket_intel.sqlite \"SELECT event_slug, entry_cost, status, opened_at FROM paper_trades WHERE kind IN ('copy_single_high_win_rate_wallet','copy_wallet_consensus') AND opened_at >= datetime('now', '-4 hours') ORDER BY opened_at DESC LIMIT 5;\"\n\n## Check 7: VPN\nRun: docker inspect polymarket-intel-vpn --format '{{.State.Health.Status}}'\n\n---\n\nAfter running all checks, compile a concise report in this format:\n\n**Polymarket Health Check \u2014 [current datetime]**\n\n### Containers\n\u2705/\u274c vpn: [status], crypto: [status], web: [status]\n\n### BTC 5M Directional (crypto_5m_late_directional)\n- Trades opened (last 4h): [count], Closed: [count], Open: [count]\n- Engine: [actively evaluating / stalled / errors found]\n- Key log note: [anything notable]\n\n### Copy Wallet (copy_single_high_win_rate_wallet)\n- Trades opened (last 4h): [count]\n- Wallets scored (last 2h): [count], Top score: [score]\n- Recent: [list 2-3 recent trade slugs]\n\n### Copy Consensus (copy_wallet_consensus)\n- Trades opened (last 4h): [count]\n\n### Research Buy\n- Trades opened (last 4h): [count]\n\n### Overall Stats (all time)\n[List each strategy with total/closed/open counts]\n\n### Flags\n[Any issues, warnings, or anomalies \u2014 be direct]\n\nKeep the report concise. No fluff. Highlight anything that needs attention in bold.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 240,
+        "display": "every 240m"
+      },
+      "schedule_display": "every 240m",
+      "repeat": {
+        "times": null,
+        "completed": 12
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-26T21:47:24.123353+00:00",
+      "next_run_at": "2026-06-28T22:00:44.254195+00:00",
+      "last_run_at": "2026-06-28T18:00:44.254195+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "terminal",
+        "file"
+      ],
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "507204eb6066",
+      "name": "Polymarket scanner (copy trades + close)",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "polymarket_intel_run.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 15,
+        "display": "every 15m"
+      },
+      "schedule_display": "every 15m",
+      "repeat": {
+        "times": null,
+        "completed": 98
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-27T15:24:03.189042+00:00",
+      "next_run_at": "2026-06-28T18:35:48.274803+00:00",
+      "last_run_at": "2026-06-28T18:20:48.274803+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "8825367018",
+        "chat_name": "Keith",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "terminal"
+      ],
+      "workdir": "/root/polymarket-intel",
+      "profile": "keith"
+    }
+  ],
+  "updated_at": "2026-06-28T18:20:48.275213+00:00"
+}

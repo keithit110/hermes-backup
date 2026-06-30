@@ -352,6 +352,8 @@ Verify engine: `docker logs polymarket-intel-crypto 2>&1 | tail -5` — no Attri
 
 ## Common pitfalls
 
+**PITFALL: `wallet_activity` table tracks OTHER traders, NOT our wallet.** The scanner populates `wallet_activity` with data from the smart-wallet tracker — these are proxy wallet addresses of other Polymarket users (BreakTheBank, swisstony, etc.). Our own trading wallet (`POLYMARKET_FUNDER` from `.env.live`) is NOT in this table. When diagnosing lost funds or checking our wallet activity, use `logs/live_health.jsonl` and `logs/live_orders.jsonl` — never query `wallet_activity` expecting to find our wallet's transactions. Added 2026-07-01.
+
 1. **P/L formula: capital-weighted return, not average**: The overall metric, chart, and strategy cards all use `(total_returned − total_deployed) / total_deployed`. Do NOT revert to simple average of per-trade percentages — that overweighted small losses and was removed 2026-06-26.
 2. **Status pill underscores**: After `replace(/_/g,' ')`, the `startsWith` strings must use spaces, not underscores.
 3. **Chart and metric card MUST use the same formula AND data subset**: Both use capital-weighted cumulative return: `(cum_returned − cum_deployed) / cum_deployed`. Both exclude open trades. Both multiply entry_cost and current_value by `shares`. A mismatch on any of these three axes (formula, subset, shares) produces the "numbers don't add up" complaint. The chart builds cumulative deployed/returned by day; the metric does it across all closed trades at once — same formula, same data.

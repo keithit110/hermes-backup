@@ -3,6 +3,13 @@
 When Keith asks "why aren't we getting any crypto trades?", the answer is always in the container logs.
 Never speculate — `grep` the logs, categorize, and present a summary table.
 
+**Two distinct failure modes — diagnose which one first:**
+
+| Symptom | See |
+|---|---|
+| No trades attempted (silence) | This document |
+| Trades attempted but all fail with `not enough balance` | `polymarket-debugging-patterns.md` → Wallet balance forensics |
+
 ## Diagnostic command
 
 ```bash

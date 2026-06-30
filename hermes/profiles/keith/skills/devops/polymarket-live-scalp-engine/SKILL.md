@@ -306,6 +306,83 @@ In binary markets, the losing token crashes $0.50→$0.01 in one tick. The winni
 
 **Status persistence pitfall (fixed 2026-07-01):** `resolve_pending_trades()` queries `status like 'closed%'` for correction, but this would overwrite `closed_stop_loss` with `closed_resolved_win/loss`. Fix: query now excludes `closed_stop_loss` — `status like 'closed%' and status != 'closed_stop_loss'`.
 
+### Diagnosing "Strategy Not Trading" — Full Workflow
+
+When the user reports a strategy hasn't traded for hours, run this diagnostic:
+
+**Step 1 — Check engine is alive:**
+```bash
+docker logs polymarket-intel-crypto --tail 50 | grep -E 'MOMENTUM|HEARTBEAT|LIVE HEALTH'
+```
+Look for: `[HEARTBEAT]` (engine alive), `[MOMENTUM] checking…` (strategy evaluating but no signal), `[LIVE HEALTH]` (balance + error counters).
+
+**Step 2 — Check for live order errors in container logs:**
+```bash
+docker logs polymarket-intel-crypto --tail 100 2>&1 | grep -E 'FAILED|balance|error'
+```
+Key error patterns: `not enough balance / allowance` (wallet empty), `PolyApiException` (API rejection), `database is locked` (DB contention).
+
+**Step 3 — Trace wallet balance over time (THE KEY DIAGNOSTIC):**
+```bash
+tail -50 /root/polymarket-intel/logs/live_health.jsonl
+```
+The `balance_usdc` field shows the raw Polymarket API balance response (Python dict repr, not JSON — parse with `ast.literal_eval()` or `str.replace("'",'"')`). Look for the exact timestamp where balance dropped. Cross-reference with the timestamp of the last successful BUY_FAK in `live_orders.jsonl`.
+
+**Step 4 — Check successful vs failed orders:**
+```bash
+# All successful BUY_FAK orders
+grep -v 'error' /root/polymarket-intel/logs/live_orders.jsonl | grep 'BUY'
+# Recent failed orders
+grep 'error' /root/polymarket-intel/logs/live_orders.jsonl | tail -20
+```
+The `ok: BUY=N | err: BUY=N` in live health counts overall lifetime stats — not just this session.
+
+**Step 5 — Check recent trades and net P&L:**
+```bash
+sqlite3 /root/polymarket-intel/data/polymarket_intel.sqlite \
+  "SELECT id, opened_at, event_slug, entry_cost, pnl_pct, status FROM paper_trades
+   WHERE source='momentum_follower' ORDER BY id DESC LIMIT 15;"
+
+# Net PnL for resolved trades
+sqlite3 /root/polymarket-intel/data/polymarket_intel.sqlite \
+  "SELECT status, COUNT(*) cnt, ROUND(SUM(entry_cost*5),2) total_cost,
+          ROUND(SUM(CASE WHEN status='closed_resolved_win' THEN 5.0 ELSE 0 END),2) total_return
+   FROM paper_trades WHERE source='momentum_follower'
+   AND status IN ('closed_resolved_win','closed_resolved_loss') GROUP BY status;"
+```
+
+**Step 6 — Verify wallet balance from Polymarket directly (if engine is running):**
+```bash
+docker exec polymarket-intel-crypto python3 -c "
+from py_clob_client_v2.client import ClobClient
+from py_clob_client_v2.clob_types import ApiCreds, BalanceAllowanceParams, AssetType
+import os
+client = ClobClient(os.environ['POLYMARKET_HOST'], key=os.environ['POLYMARKET_PRIVATE_KEY'],
+                    chain_id=int(os.environ.get('POLYMARKET_CHAIN_ID',137)),
+                    creds=ApiCreds(api_key='', api_secret='', api_passphrase=''))
+client.set_api_creds(client.create_or_derive_api_key())
+balance = client.get_balance_allowance(params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL, signature_type=3))
+print('Balance:', balance.get('balance','N/A'))
+"
+```
+Warning: the py_clob_client_v2 import may fail from `docker exec` if the module path differs. The engine's own health check is the authoritative source — trust `logs/live_health.jsonl`.
+
+**Common causes of "strategy not trading":**
+
+| Symptom | Likely Cause | Fix |
+|---|---|---|
+| `not enough balance: balance: 0` in logs | Wallet USDC depleted | Deposit funds on Polymarket |
+| `not enough balance: balance: 0` but order log shows only small trades | **Wallet drained externally** (seed compromise, withdrawal, sweep) | Verify on-chain balance via Polygon RPC; check Polymarket UI for transfers; **audit SSH security** — check `PermitRootLogin`, `PasswordAuthentication`, and brute-force volume with `journalctl -u ssh --since today | grep "Failed password" | wc -l`; if seed/private key compromised, create NEW wallet immediately. **Note: one EVM private key controls ALL chains sharing that address** — a single POLYMARKET_PRIVATE_KEY leak explains drains on Ethereum, BSC, and Polygon simultaneously. |
+| Only `[MOMENTUM DBG]` lines, all `in_window=False` | BTC not moving enough, or outside entry window | Normal quiet period — strategy is alive, just waiting |
+| Only `[MOMENTUM DBG]` lines, all `in_window=False` | BTC not moving enough, or outside entry window | Normal quiet period — strategy is alive, just waiting |
+| Zero MOMENTUM output of any kind | Engine crashed or strategy disabled | Check `docker logs polymarket-intel-crypto --tail 20` for crash |
+| Balance dropped $76 but last trade was only $3.75 | Possible withdrawal, conditional token redemption, or API glitch | Check Polymarket UI for recent transactions |
+| `database is locked` errors | SQLite contention | See DB Locking section above; check WAL settings |
+
+**PITFALL: `wallet_activity` table is smart-wallet scanner data, NOT our wallet.** When diagnosing lost funds, `SELECT * FROM wallet_activity WHERE wallet LIKE '%0x0A47%'` returns nothing — the scanner only tracks OTHER traders' proxy wallets. Our wallet (`POLYMARKET_FUNDER`) is NOT in `wallet_activity`. Use `logs/live_health.jsonl` and `logs/live_orders.jsonl` for our wallet's activity.
+
+See `references/strategy-not-trading-diagnostic.md` for the complete step-by-step workflow with real session examples. For wallet drains caused by external factors (seed compromise, withdrawal, sweep), see `references/security-wallet-drain-forensics.md`.
+
 ### Entry Price Source of Truth — Polymarket Fill, Not Assumed Ask
 
 **Logic:** During the trigger window (T+45s to T+85s, i.e. `seconds_remaining` between 215 and 255), check if BTC has moved ≥ threshold. If so, enter that direction at market (GTC limit buy at ask) and hold to resolution.

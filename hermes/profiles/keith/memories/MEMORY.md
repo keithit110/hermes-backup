@@ -9,3 +9,5 @@ Polymarket /root/polymarket-intel: web :8095, crypto+scanner Docker via gluetun 
 Keith's #1 rule: never claim UI fix verified without browser proof (Playwright 390×844). Verify: JS valid, data loaded, table has rows, clicks work (check pointer-events:none on hidden panels), pagination gap ≤10px. Grep/curl are NOT evidence.
 §
 Keith rejects complex entry-band/price-band filtering for momentum strategy ("these prices always fluctuate"). Prefers simple min/max entry price guards over multi-band analysis. Only use entry price filtering when it directly gates risk/reward (e.g., max entry $0.75 prevents upside-too-small trades), not for statistical "sweet spot" analysis.
+§
+Polymarket bot wallet 0x0A47...c7d8 drained June 30 (~$76) to hacker 0x3119...b74C. Single key leak explains all chains (ETH/BSC/Polygon same key). SSH clean, provider hypervisor access possible. RULE: dedicated bot wallet only ($50-100), chmod 600 .env.live, gitignored, never log/commit key. Repo: git@github.com-polymarket:keithit110/Polymarket-hermes-project.git — clean, ready for new VPS deploy.

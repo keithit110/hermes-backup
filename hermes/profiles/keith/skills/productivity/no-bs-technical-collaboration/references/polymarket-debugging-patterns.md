@@ -305,6 +305,74 @@ if not have_btc:
 
 The Polymarket WS already provides Chainlink BTC/USD via RTDS subscription. Use it as fallback for the eval gate.
 
+## Wallet balance forensics — \"why are all my funds gone?\" (2026-06-30)
+
+When the engine IS placing orders but they ALL fail with `not enough balance / allowance: balance: 0`, and the wallet went from funded to zero without a massive single trade.
+
+### Step 1: Confirm it's a balance issue, not an engine silence issue
+
+```bash
+docker logs polymarket-intel-crypto --tail 200 2>&1 | grep -c "not enough balance"
+# If >0: wallet is empty, not a signal/threshold problem
+```
+
+Also check the live health log for balance timeline:
+
+```bash
+grep balance_usdc /root/polymarket-intel/logs/live_health.jsonl | tail -20
+# Balance is in wei (6 decimals for USDC): 75998814 = $75.99
+```
+
+### Step 2: Check on-chain wallet balance with web3.py
+
+Polymarket holds USDC in their own contracts, not in the funder wallet. But on-chain provides ground truth.
+
+```python
+from web3 import Web3
+w3 = Web3(Web3.HTTPProvider('https://1rpc.io/matic'))  # only reliable public RPC found
+address = w3.to_checksum_address('0xYOUR_FUNDER_ADDRESS')
+
+# MATIC
+matic = w3.eth.get_balance(address)
+
+# USDC (native Polygon) — contract: 0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359
+# USDC.e (bridged) — contract: 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
+# ABI: balanceOf(address) → uint256, decimals() → uint8
+```
+
+### Step 3: Trace the balance drop in health logs
+
+```bash
+# Find when balance went to zero
+grep -E "'balance': '0'" /root/polymarket-intel/logs/live_health.jsonl | head -3
+# Compare with last non-zero balance
+grep -v "'balance': '0'" /root/polymarket-intel/logs/live_health.jsonl | tail -5
+```
+
+### Step 4: Correlate with order activity at the drop time
+
+```bash
+grep '"status":"success"' /root/polymarket-intel/logs/live_orders.jsonl | tail -20
+```
+
+### Polygon RPC endpoint notes
+
+| Endpoint | Status |
+|---|---|
+| `https://1rpc.io/matic` | Works, but rate-limited (free tier) |
+| `https://polygon-rpc.com` | Did not connect (June 2026) |
+| `https://polygon.llamarpc.com` | Did not connect (June 2026) |
+| Polygonscan API V1 | Deprecated — use Etherscan V2 with chainid=137 |
+
+### Common root causes for sudden $0 balance
+
+1. **Manual withdrawal** from Polymarket UI — check polymarket.com → Portfolio → History
+2. **Conditional token redemption** credited to a different address after market resolution
+3. **Polymarket internal accounting discrepancy** — rare but possible
+4. **Engine placed an unexpectedly large order** — check for unusually large FAK sizes in live_orders.jsonl
+
+**The engine log only records engine-initiated orders.** It will NOT show withdrawals, Polymarket UI actions, or external transfers. When $72 vanishes and only a $3.75 trade is logged, the cause is external.
+
 ## Momentum follower performance analysis (2026-06-30)
 
 When analyzing momentum follower profitability:

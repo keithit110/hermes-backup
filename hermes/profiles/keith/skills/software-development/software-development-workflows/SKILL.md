@@ -125,6 +125,7 @@ Use those when the umbrella overview is not enough.
 - `references/live-vs-paper-trading-separation.md` — use when building Polymarket dashboards that track both paper and live real-money trades; covers `is_live` DB flag, split stats strips, Trade Type filter drawer, and live P/L summary cards that only appear when real orders exist.
 - `references/polymarket-wallet-research.md` — methodology for finding profitable Polymarket wallets across BTC 5-min markets; covers Telonex, Polymarket Analytics, predicts.guru, Data API, Gamma API, Dune, and Bitquery sources; wallet strategy archetypes (sniper, noise farmer, hybrid maker/taker).
 - `references/paper-trading-strategy-bots.md` — candidate-filter, strategy-lane, status-label, and verification patterns for signal-driven paper-trading bots.
+- `references/on-chain-wallet-forensics.md` — use when tracing stolen funds on Polygon; covers USDC transfer scanning, RPC rate-limit workarounds, Polymarket internal vs on-chain balance distinction, and scammer wallet patterns.
 - `references/playwright-local-verification.md` — use when the Browserbase tool cannot reach the VPS (502 on non-standard ports); provides the Playwright local screenshot workflow, JS syntax check (`node -c`), Docker rebuild checklist, and raw-string JS escaping pitfall.
 ## Verification Checklist
 

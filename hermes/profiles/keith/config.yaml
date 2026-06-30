@@ -467,6 +467,7 @@ command_allowlist:
 - script execution via -e/-c flag
 - SQL DELETE without WHERE
 - recursive delete
+- docker restart/stop/kill (container lifecycle)
 - execute_code
 - shell command via -c/-lc flag
 quick_commands: {}

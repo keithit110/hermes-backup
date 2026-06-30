@@ -110,25 +110,69 @@ The strategy has 78% win rate overall but is net negative (-$4.45 across 127 tra
 - **Condition**: existing_entry_cost + opposite_ask ≤ `CRYPTO_HEDGE_MAX_COST` (default 0.98)
 - **Kind**: `crypto_5m_profit_lock_hedge`
 
-### Lane 4 — Midpoint scalp (added 2026-06-28)
+### Lane 4 — Midpoint scalp (added 2026-06-28, paused 2026-06-29)
 
 Independent from Lane 2 directional. Based on reverse-engineering of wallet **nj23adsknml3** — buys near midpoint and scalps small bounces.
 
+**Note**: This strategy was paused because the 10:1 loss-to-win ratio (5 shares × $0.50 = $2.50 risk per trade vs +$0.25 TP) made it unsustainable on a $23 wallet. One loss erased 10 wins. Kept for reference — re-enable with `SCALP_SHARES` set to > 0.
+
+**To disable**: set `SCALP_SHARES=0` and `SCALP_SHARES_NEUTRAL=0` in docker-compose.yml. The `evaluate_scalp()` function has an early-return guard: `if SCALP_SHARES <= 0: return`.
+
 - **Entry range**: `SCALP_MIN_ENTRY`–`SCALP_MAX_ENTRY` (default 0.47–0.53) — token ask price must be near 50/50
-- **Position size**: `SCALP_SHARES` (default 2) per entry, flat
-- **Take profit**: exit when bid reaches `entry_cost + SCALP_TAKE_PROFIT` (default +0.04)
-- **Max concurrent**: `SCALP_MAX_OPEN` (default 3) open positions across all windows
-- **Deadline bail-out**: close position at last known bid when ≤ `SCALP_DEADLINE_SECONDS` (default 30) remaining; no holding to resolution
+- **Position size**: `SCALP_SHARES` (default 5 for live, 1 for paper) per entry, flat
+- **Take profit**: exit when bid reaches `entry_cost + SCALP_TAKE_PROFIT` (default +0.04) via market sell (live) or recorded profit (paper)
+- **Max concurrent per window**: `SCALP_MAX_OPEN` (default 3) open positions **per window** — each new 5-min window gets its own budget. Old-window positions (held as losers) do NOT consume slots in the new window.
+- **Re-entry after TP**: allowed — `has_scalp_position()` only checks OPEN positions, so a closed TP clears the guard and the next cycle re-enters.
+- **Deadline**: hold losers to resolution (no bail-out). Near-close (T-30s) market sell if current bid > entry; otherwise hold.
 - **Source**: `midpoint_scalp`, **Kind**: `midpoint_scalp` — completely separate from directional in DB
 - **JSONL logging**: every decision logged to `logs/scalp_decisions.jsonl`
+- **Live trading**: uses `py-clob-client-v2` with POLY_1271 auth, `is_live=1` flag set only after BUY order fills on Polymarket. Market sells gated on `check_buy_fill()` to ensure shares exist before selling.
+- **Funder address**: the deposit wallet visible in Polymarket UI dropdown (e.g. `0x0A47689Ab9025E1D6036856dFD52Edd588eDc7d8`), NOT the MetaMask EOA. This is critical for auth — L1 uses EOA, order signing uses funder.
+- **Minimum shares**: 5 for live due to Polymarket $1 minimum order value (0.47 × 5 ≈ $2.35 ≥ $1).
 
 #### Pitfalls
 
+**Cross-window position starvation (FIXED 2026-06-29):** The original `count_open_scalps()` counted ALL open scalps across ALL windows. If a previous window's DOWN was still open (held as loser), it consumed a SCALP_MAX_OPEN slot, blocking new-window entries. **Fix:** `count_open_scalps(conn, event_slug=event_slug)` counts only the current window. Each window gets its own SCALP_MAX_OPEN budget. Additionally, the count is recomputed between UP and DOWN checks — a just-opened UP can't block DOWN due to a stale count variable.
+
 **Bailout fails when `current_bid = 0`**: near deadline, the orderbook may thin out and `best_bid` drops to 0. The bailout check `current_bid > 0` blocks, and the position drifts to resolution at -100%. Fix: the `_close_all_expired_windows()` safety net must cover `midpoint_scalp` — use last-known bid from engine state, fallback to entry price if stale.
 
-**Re-entry loop**: after TP close or deadline bail-out, `has_scalp_position()` only checks OPEN positions. A closed position clears the guard, so the next eval cycle re-enters the same side in the same window. Fix: at the top of `evaluate_scalp()`, check for any `closed_deadline` trades in the current slug — if found, skip all further entries in that window.
+**Re-entry loop**: after TP close or deadline bail-out, `has_scalp_position()` only checks OPEN positions. A closed position clears the guard, so the next eval cycle re-enters the same side in the same window. This is INTENTIONAL for the current strategy — re-entry after TP is desired. The `already_traded_side_in_window()` function exists but is deliberately NOT used in `evaluate_scalp()`.
+
+**Live market sell before buy fills**: The engine gates all market sells on `check_buy_fill()` which polls Polymarket order status. Without this gate, market sells fail with "not enough balance: 0" because the buy hasn't settled yet. This applies to all three exit paths: TP hit, spike, and near-close.
 
 **nj23adsknml3 holds losers**: the wallet we reverse-engineered holds losing positions through resolution instead of bailing at deadline. They have 46+ positions simultaneously (across many windows, ~3–4 per window), tiny bets (~$1–2 each), and don't optimize for gas. Their 1.6% edge comes from scale, not from avoiding losses. Holding losers means no re-entry loop, but occasional full -100% losses.
+
+### Lane 5 — Momentum follower (activated live 2026-06-29)
+
+Replaced midpoint_scalp as the primary live strategy. At T+45s–T+85s of each 5-min window, checks BTC price movement. If BTC has moved >0.05% in one direction, enters that direction and holds to resolution. No TP, no stop-loss.
+
+- **Trigger window**: `MOMENTUM_TRIGGER_START`–`MOMENTUM_TRIGGER_END` (default 215–255, i.e., T+45s to T+85s)
+- **Threshold**: `MOMENTUM_THRESHOLD` (default 0.0005 = 0.05% BTC move)
+- **Shares**: `MOMENTUM_SHARES` (2 for live — minimum to meet Polymarket $1 order value at 0.50+ entry)
+- **Entry**: one per window max, enters at current ask price
+- **Exit**: hold to resolution (no TP, no stop-loss). Polymarket auto-converts shares to USDC on resolution — engine just updates DB.
+- **Source/kind**: `momentum_follower`
+- **Live toggle**: `MOMENTUM_LIVE=true` (was `false` during paper-only testing). Uses `place_buy_limit()` with GTC orders.
+
+**Env vars**:
+```
+MOMENTUM_ENABLED=true
+MOMENTUM_LIVE=true
+MOMENTUM_THRESHOLD=0.0005
+MOMENTUM_SHARES=2
+MOMENTUM_TRIGGER_START=215
+MOMENTUM_TRIGGER_END=255
+```
+
+**Risk profile** (2 shares):
+- Entry: $1.00–$1.40 per trade
+- Win (right direction): shares × 1.0 = $2.00 → +$0.60–$1.00
+- Loss (wrong direction): shares × 0.0 = $0.00 → -$1.00–-$1.40
+- Risk/reward: ~1:1.7
+
+**Disable other strategies when going live**: set `SCALP_SHARES=0` and `SCALP_SHARES_NEUTRAL=0`. Remove or set `SCALP_MAX_OPEN=0`. The `evaluate_scalp()` guard `if SCALP_SHARES <= 0: return` prevents any scalp entries.
+
+**Disable momentum follower**: set `MOMENTUM_ENABLED=false` or `MOMENTUM_LIVE=false`.
 
 ## Resolution checking
 

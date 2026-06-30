@@ -213,6 +213,27 @@ curl -s -o /dev/null -w "HTTP %{http_code}" http://localhost:8095/
 
 If the API still returns old values after deploy, the Docker COPY layer was cached — rebuild with `--no-cache`.
 
+## Python raw string escaping when patching templates
+
+When `web.py` uses `PAGE = r"""..."""` (raw string) for inline HTML/JS templates, the `patch` tool can mangle backslash escaping. This is especially dangerous with JavaScript template literals that contain escaped quotes like `class=\"stat-item\"`.
+
+**Symptom**: after a `patch()` call, the template renders broken HTML (extra backslashes in class attributes) or the browser shows raw escape sequences.
+
+**Root cause**: the patch tool works on the file's literal content, but the escaping chain is:
+- Python raw string: `class=\"stat-item\"` (literal `\`, `"`)  
+- Python repr shows: `class=\\"stat-item\\"`
+- JavaScript output: `class="stat-item"` (correct)
+
+After a mangled patch, the file might contain `class=\\\\\\\"stat-item\\\\\\\"` (3+ backslashes) which renders as `class=\"stat-item\"` in JS (wrong — shows literal backslash).
+
+**Fix**: use byte-level replacement with hex bytes instead of relying on the patch tool for escaping-sensitive content:
+```python
+# Replace triple-backslash+quote sequences with single-backslash+quote
+content = content.replace(b'\\x5c\\x5c\\x5c\\x22', b'\\x5c\\x22')
+```
+
+**Verification**: after any patch to the template section, read the file with `python3 -c` and check `repr()` of the affected lines — they should show exactly `\\"` (two characters in repr = one backslash + quote in file), not `\\\\"` or `\\\\\\"`.
+
 ## Docker cached COPY layers (--no-cache)
 
 When `docker compose build` shows `#10 CACHED` for the `COPY app ./app` step, the running container is serving STALE code. The Docker build cache didn't detect the file changes.
@@ -370,3 +391,19 @@ if(v.closed.length > 0){
 **Example of what this prevents:**
 - Research paper buy: 1 open trade with mark-to-market showing -100% → card would falsely show "-100.00%" as if it's a realized loss. Fix: shows "1 open" instead.
 - Wallet copy trades showing +5% unrealized → misleading. Fix: shows "—" in P/L column.
+
+## Keith's Hard Rule: No DB Estimated P/L in Live Trading UI
+
+When live trading is active (real money on Polymarket), the DB-estimated P/L from trade records is **misleading** and must NOT appear in the dashboard:
+
+1. **Remove the "DB Est P/L" stat row** from the live metrics section entirely.
+2. **Remove the `renderLivePnL()` card** — the separate panel that shows DB-computed closed P/L.
+3. **Set `livePnLSummary.innerHTML = ''`** — clear the div so no phantom P/L renders.
+
+**Only wallet-grounded numbers remain**: Wallet Balance, Actual P/L (wallet - start), Live Deployed, Live Open.
+
+**Why**: DB P/L counts trades marked `is_live=1` but pre-FAK GTC orders could be in that state without actually filling on-chain. Phantom fills create a permanently incorrect DB P/L that can't be reconciled with wallet reality. Rather than attempt to fix historical phantom data, just remove the misleading display.
+
+## Deposit Detection UI Behavior
+
+When the wallet detects a deposit/withdrawal (see `references/live-trading-engine-verification.md`), the `wallet_start_balance` is auto-reset. This means **Actual P/L drops to $0.00** after a deposit — this is correct behavior, not a bug. The user should see $0.00 profit immediately after adding funds, not a phantom gain from the deposit.

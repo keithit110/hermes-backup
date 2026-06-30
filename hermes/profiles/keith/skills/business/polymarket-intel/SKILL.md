@@ -5,7 +5,16 @@ description: Work on the Polymarket Intel paper-trading dashboard, crypto engine
 
 # Polymarket Intel
 
-Paper-trading research platform at `/root/polymarket-intel`. Flask dashboard + crypto 5-min engine + market scanner + smart-wallet watcher + news research agent. The midpoint scalp strategy can go live (real USDC on Polymarket CLOB) when `LIVE_TRADING_ENABLED=true`; all other strategies are paper-only. Paper and live data are separated in the DB via `is_live` flag and displayed in separate UI sections — never mix paper dollar amounts into live displays.
+Paper-trading research platform at `/root/polymarket-intel`. Flask dashboard + crypto 5-min engine + market scanner + smart-wallet watcher + news research agent. The momentum follower strategy is live (real USDC on Polymarket CLOB); all other strategies are paper-only. Paper and live data are separated in the DB via `is_live` flag and displayed in separate UI sections — never mix paper dollar amounts into live displays.
+
+## SOURCE OF TRUTH: Polymarket, not the DB
+
+**Keith's explicit directive (2026-07-01):** The DB is NOT the source of truth for any live trading data. Polymarket (the real exchange) is. The DB can be wrong — it contains assumptions, estimates, and cached state. Always verify against Polymarket before making claims. Specific rules:
+
+- **Entry prices**: Never assume `entry_cost = ask at decision time`. FAK orders may fill at different prices than the ask. Always pull the actual fill price from Polymarket's order response (`avg_price`, `matched_price`) and update the DB. The DB entry_cost is WRONG until proven correct by a Polymarket fill.
+- **Resolution outcomes**: Gamma API (`/events/slug/{slug}`, `outcomePrices`) is the official Polymarket outcome. Chainlink/Binance BTC data is a best-guess ONLY. The Gamma API winner overrides any BTC-based guess.
+- **Live wallet balance**: From Polymarket health log, never computed from DB trade records.
+- **When DB disagrees with Polymarket**: Fix the DB. Never argue from DB data.
 
 ## GitHub repository
 
@@ -222,6 +231,14 @@ let losses = closedBtc.filter(r => Number(r.pnl_pct||0) <= 0).length;
 
 Keith wants paper and live trading stats **completely separate** in the UI. Never show dollar amounts derived from paper trades — paper trades get percentages only. Live trades get their own dedicated stats section with exact dollar amounts. When Keith asks for dollar amounts, he means **live trading dollars only**, not paper-derived figures.
 
+**The dashboard live section MUST be wallet-grounded, NOT DB-computed (2026-06-29 user correction):** Keith caught the dashboard showing +$5.56 live P/L when his wallet was actually DOWN. The DB-computed `live_pnl_dollars` was based on trade records with `is_live=1` — some of which were false positives from orders that never filled. The fix:
+- **Wallet Balance**: Real USDC balance from Polymarket health log (parsed from `logs/live_health.jsonl`)
+- **Actual P/L**: `wallet_balance − wallet_start_balance` — computed server-side in `/api/summary`, returned as `actual_pnl`
+- **`wallet_start_balance` persisted in DB**: Stored in `crypto_engine_state` table (`key='wallet_start_balance'`) so it survives health log rotation. Fallback to first health log entry if DB value is missing.
+- **DB Est P/L**: Still shown but explicitly labeled "from trade records (not actual)" — LAST in the live stats strip, not first
+- **`live_pnl_pct` REMOVED** from the API response entirely — percentages have no place in the live section
+- **Health log `balance_usdc` is Python dict repr**, not JSON: the parsing in `web.py` must do `bal.replace("'", '"')` before `json.loads()`
+
 **Implementation (2026-06-28):**
 
 - **`is_live` column** on `paper_trades` (INTEGER DEFAULT 0): set to 1 ONLY after a successful CLOB order placement. `insert_paper_trade()` always inserts with `is_live=False` initially. After `place_buy_limit()` returns a valid order ID, the engine runs `UPDATE paper_trades SET is_live=1 WHERE id=?` — the flag reflects REAL order execution, not intent. Engine logs show `LIVE` vs `PAPER` based on whether the buy succeeded (`did_live` flag), not whether live trading is enabled. **User-explicit correction (2026-06-28):** Keith caught the web UI displaying fake live dollar amounts because the old code set `is_live=True` at insert time BEFORE placing the order — when orders silently failed (geoblock, signer mismatch, version error), the DB falsely claimed live trades. Reset bad data with `UPDATE paper_trades SET is_live=0 WHERE is_live=1 AND kind='midpoint_scalp'` (stop engine first to release DB lock).
@@ -348,13 +365,19 @@ Verify engine: `docker logs polymarket-intel-crypto 2>&1 | tail -5` — no Attri
 
 10. **`resolve_pending_trades()` only handled `crypto_5m_engine` (fixed 2026-06-28)**: The function queried `source='crypto_5m_engine' and status like 'closed%'` — open scalp trades were invisible. Fix: added a second query for `source='midpoint_scalp' and status='open'` trades on resolved slugs.
 
+10b. **`resolve_pending_trades()` missed momentum/scalp trades after window-close (fixed 2026-07-01)**: The second query for `midpoint_scalp` and `momentum_follower` only checked `status='open'`. But `_close_old_window_positions()` marks ALL open trades as `closed_resolved_win/loss` using Chainlink BTC data BEFORE `resolve_pending_trades()` runs. Result: if the Chainlink-based guess was wrong and Polymarket's Gamma API says the opposite outcome, the correction NEVER fires because the trade is no longer `status='open'`. Example: momentum trade #1611 (DOWN at $0.64) was closed as `closed_resolved_win` by BTC guess, but Gamma API shows the winner was Up — should have been a -100% loss. Fix: changed query to `(status='open' or status like 'closed%')` — re-resolves ALL trades for the slug, correcting any BTC-based guesses. Same bug existed for `midpoint_scalp` but was masked because scalp rarely holds to resolution.
+
+37. **DB entry_cost assumed = ask at decision time (fixed 2026-07-01)**: The momentum follower recorded `entry_cost = up_ask or down_ask` — the price seen at decision time. But FAK orders may fill at different prices due to book movement. The DB entry_cost was WRONG whenever the actual fill differed. Fix: `place_buy_fak()` now extracts actual fill price from Polymarket's order response via `_extract_fill_price()` (tries `avg_price`, `matched_price`, `price_matched`, `filled_avg_price`, and nested `fills` array). Returns `{\"order_id\": ..., \"fill_price\": actual_fill}`. `evaluate_momentum()` updates DB `entry_cost` immediately when actual_fill differs from assumed ask. Logged as `[MOMENTUM] actual fill @ $0.xxx (assumed $0.yyy)`. **Keith's rule: Polymarket is source of truth for all entry prices. Never assume.**
+
 11. **Re-entry loop: LIKE pattern was the real bug, not the guard (2026-06-28)**: The duplicate entry chaos had two phases. Phase 1: `already_traded_side_in_window()` blocked ALL re-entry per side per window — killed scalp volume. Phase 2: the real root cause was the LIKE pattern bug (pitfall #12 below). Original `has_scalp_position()` guard actually works — prevents opening a second same-side position while one is open, allows re-entry after TP close. This IS the intended midpoint scalp behavior.
 
 12. **LIKE pattern bug: JSON matching requires space after colon (fixed 2026-06-28)**: Both `has_scalp_position()` and `already_traded_side_in_window()` used LIKE pattern `%"side":"UP"%` but `json.dumps()` produces `{"side": "UP"}` (SPACE after colon). The LIKE pattern matched ZERO rows, so both guards silently returned `False` for every call. Windows routinely had 6 UP + 5 DOWN entries. Fix: `f'%"side": "{side}"%'` — note the space.
 
 13. **MAX_SPREAD caps entries before SCALP_MAX_OPEN**: In trending markets, spread widens immediately after first 1-2 entries, blocking the 3rd. Correct — don't want entries when order book is 8% wide.
 
-14. **Live trading import path**: Engine runs as `python -m app.crypto_engine` in Docker (workdir `/app`, code at `/app/app/`). Import MUST be `from app import live_trading`, NOT `import live_trading`. Causes `ModuleNotFoundError` otherwise.
+14. **Global `count_open_scalps()` blocks new-window entries (fixed 2026-06-29):** `evaluate_scalp()` used `count_open_scalps(conn)` which counted ALL windows. When a DOWN from the previous window held open (loser waiting for resolution), it consumed a SCALP_MAX_OPEN slot and blocked UP or DOWN entries in the new window. Fix: `count_open_scalps(conn, event_slug=event_slug)` scopes to current window only. Also recompute `window_open` between UP and DOWN checks so opening one side doesn't block the other with a stale count. Added `count_open_scalps_other_windows()` for safety logging. The log output now shows `window=N/M global=N` so you can see if old windows are accumulating positions.
+
+15. **Live trading import path**: Engine runs as `python -m app.crypto_engine` in Docker (workdir `/app`, code at `/app/app/`). Import MUST be `from app import live_trading`, NOT `import live_trading`. Causes `ModuleNotFoundError` otherwise.
 
 15. **Live trading credentials — auto-derive (2026-06-28)**: `py-clob-client` provides `derive_api_key()` which generates API credentials from wallet signature. The live_trading module auto-derives on startup. User only needs `POLYMARKET_PRIVATE_KEY` and `POLYMARKET_FUNDER` — no manual API key creation on polymarket.com needed.
 
@@ -376,6 +399,34 @@ Verify engine: `docker logs polymarket-intel-crypto 2>&1 | tail -5` — no Attri
 22. **Live orders fail silently with 403/400 — check live_orders.jsonl (2026-06-28)**: When the engine prints `[SCALP] OPEN #N ... LIVE` but no fills appear, the orders were placed but rejected. Check `docker exec polymarket-intel-crypto cat /logs/live_orders.jsonl | tail -5 | python3 -m json.tool` for the error field. Common causes: (a) geoblock (403 — wrong VPN country), (b) invalid order version (400 — upgrade to v2 SDK), (c) signer address mismatch (400 — need pre-created API keys for deposit wallets), (d) insufficient balance.
 
 23. **py-clob-client v1 deprecated (2026-06-28)**: Polymarket now requires `py-clob-client-v2>=1.0`. The v1 package returns `400 invalid order version, please use the latest clob-client` on every order. Migrate to v2: see Live Trading section for full API surface differences.
+
+25. **Balance-allowance query needs params (2026-06-28):** Calling `get_balance_allowance()` with no arguments returns `400 Invalid asset type`. Must pass `BalanceAllowanceParams(asset_type=AssetType.COLLATERAL, signature_type=3)`. Without this, the health heartbeat shows `balance=None` and TP sells fail because the engine thinks balance is 0.
+
+26. **Polymarket minimum order is $1.00 AND 5 shares (2026-06-28):** Orders below $1.00 are rejected with `invalid amount for a marketable BUY order ($0.50), min size: $1`. Separately, minimum SHARE count is 5: `Size (3) lower than the minimum: 5`. With midpoint scalp entry at $0.47-$0.53, 5 shares = $2.35-$2.65 (always passes both checks). Set `SCALP_SHARES=5` in docker-compose.yml. History: 1→2→3→5.
+
+27. **Deposit wallet address vs EOA — use the Polymarket UI to find it (2026-06-28, CONFIRMED 2026-06-29):** The EOA (derived from private key) is NOT the deposit wallet. They are different addresses. To find the real deposit wallet: go to Polymarket.com → click avatar (top-right) → dropdown shows username (`mellit110`) with address underneath → **click the copy icon** next to the address → paste. The copied address is the deposit wallet (e.g. `0x0A47689Ab9025E1D6036856dFD52Edd588eDc7d8`), NOT the EOA (`0xa5Df...`). This copied address goes in `.env.live` as `POLYMARKET_FUNDER`. Using the EOA as funder causes `400 the order signer address has to be the address of the API KEY` on every order — even when auth, API keys, and balance are all correct.
+
+**CRITICAL — the Polymarket Settings page shows the Relayer API Key address, which is ALSO the EOA, not the deposit wallet.** The ONLY place to find the deposit wallet address is the avatar dropdown in the main Polymarket UI. Do NOT use the address shown in Settings → Relayer API Keys as the funder.
+
+28. **Monkeypatch for L1 auth is WRONG for POLY_1271 (2026-06-28):** L1 auth must use the EOA as `POLY_ADDRESS` — the EOA signs the ClobAuth message claiming control of itself. Using the funder as `POLY_ADDRESS` causes `401 Invalid L1 Request headers`. The order builder already correctly uses the funder for order signing via `_v2_order_signer()`. Do NOT monkeypatch L1 headers.
+
+29. **Health log `balance_usdc` is Python dict repr, not JSON (2026-06-29):** The `log_health_heartbeat()` function stores `str(balance_dict)` in the JSONL file. The result is `"{'balance': '40382603', ...}"` — single-quoted Python repr, not valid JSON. When parsing in `web.py`, convert single quotes to double before `json.loads()`: `bal.replace("'", '"')`. Without this, `isinstance(bal, dict)` is False and wallet balance shows as None in the dashboard. The root cause is `balance = _client.get_balance_allowance(params=...)` returning a dict, then `str(balance)` producing Python repr before serializing into JSON.
+
+30. **Engine restart leaves live positions stranded as "open" (2026-06-29):** When the crypto container restarts, in-memory state (pending buy orders, TP tracking) is lost. Open live trades may become orphaned — their window resolves but the engine can't sell them. After any restart, check: `SELECT id, status, entry_cost, is_live FROM paper_trades WHERE source='midpoint_scalp' AND status='open'`. Manually resolve expired windows: `UPDATE paper_trades SET status='closed_resolved_loss', current_value=0.0, pnl_pct=-1.0 WHERE id=N`. Also check for stuck positions that should have been sold: if a trade is open on a window that's long past its `end_date`, force-close it.
+
+31. **FOK market sell orders killed silently — use FAK market sell (2026-06-29):** The original `place_market_sell()` used `OrderType.FOK` — killed when liquidity was insufficient for all 5 shares. Switched to `OrderType.FAK` (Fill-and-Kill) — fills whatever shares are available at market price, cancels unfilled portion. DO NOT use GTC limit sells at bid for TP exits — they place resting orders that may not fill before the window closes. FAK is the correct market sell type. See `references/market-sell-order-types.md` for the full order type cheat sheet.
+
+31b. **OrderType.IOC does NOT exist in py-clob-client-v2 (2026-06-29):** `py-clob-client-v2` has `FOK`, `FAK`, `GTC`, `GTD` — no `IOC`. Using `OrderType.IOC` causes `AttributeError` on every sell attempt, producing hundreds of identical error log lines per window. The equivalent is `OrderType.FAK`. This was the root cause of an entire 5-min window passing with zero sells succeeding — every retry hit the same AttributeError at 1s intervals.
+
+33. **Polymarket order fills are the source of truth — never assume engine state (2026-06-29):** The engine previously assumed `place_market_sell()` succeeded and immediately marked DB positions `closed_take_profit`. When sells failed (FOK killed, IOC not found, 400 errors), the DB showed fake profits while shares were still alive on Polymarket. Fix: added `check_sell_fill(trade_id)` in `live_trading.py` that polls `get_order(order_id)` for `MATCHED` status, plus `_pending_sell_orders` dict tracking. All three exit paths (TP, spike, near-close) now follow: (1) place sell, track order ID, (2) poll for fill confirmation, (3) only close DB on confirmed MATCHED. Retry on next tick if not filled. See `references/market-sell-exits.md`.
+
+34. **Near-close exit freezes the entire window — no more entries allowed (2026-06-29):** Once a near-close exit fires (within `SCALP_DEADLINE_SECONDS` of window close), the engine adds the event_slug to `_frozen_windows` set. `evaluate_scalp()` checks this set and returns immediately for frozen windows — no buying, no re-entries, nothing. Losers still held to resolution (bid < entry). Configurable via `SCALP_DEADLINE_SECONDS` env var (default 120 = 2 minutes). The freeze is in-memory only — survives engine runtime, resets on restart.
+
+35. **Risk/reward for midpoint scalp is 7:1 against you at current parameters (2026-06-29 analysis):** Full audit of 50 live trades showed: TP wins average +$0.35 each, resolution losses average -$2.43 each. You need an 87.5% win rate to break even. DOWN side is 60% win rate → bleeding -$20.16 net. The math: risk $2.50 (5 shares × $0.50 entry going to $0) to make $0.25 (5 shares × +$0.05 TP). That's a 10:1 risk/reward before adjusting for the 60% win rate. Increasing TP to $0.10 improves ratio to 1:4.9. Reducing DOWN to 2 shares cuts losses from -$24 to -$10 while maintaining TP wins. Either change alone shifts net from marginal positive to solidly green. See full analysis in `references/risk-reward-analysis.md`.
+
+36. **Scalp parameters are env-var configurable — no code changes needed for tuning:** All scalp parameters live in `docker-compose.yml` as env vars on the crypto service: `SCALP_MIN_ENTRY`, `SCALP_MAX_ENTRY`, `SCALP_TAKE_PROFIT`, `SCALP_SPIKE_THRESHOLD`, `SCALP_SHARES`, `SCALP_MAX_OPEN`, `SCALP_DEADLINE_SECONDS`. After changing any value: `docker compose up -d --build crypto`. Current values (2026-06-29): entry 0.45-0.55, TP +0.05, spike +0.07, deadline 120s, shares 5, max open 3. History: entry was 0.47-0.53, TP was 0.04, spike was 0.06, deadline was 30s.
+
+32. **Ignored sell result → DB falsely closed (2026-06-29):** Even after the FOK→GTC fix, the engine still marked positions as `closed_take_profit` when `place_market_sell()` returned None (failure). The shares stayed open on Polymarket but the DB thought they were sold. Fix: all three exit paths now check `sell_ok = place_market_sell(...) is not None` before committing the DB update. On failure, `continue` to retry on the next tick. The DB position stays open until a sell actually succeeds.
 
 24. **is_live flag false positives — reset DB when orders silently fail (2026-06-28)**: The engine's `is_live` flag is now set ONLY after successful order placement. Previously it was set at insert time — when orders failed (geoblock, signer mismatch), the DB falsely claimed live trades. If the web UI shows live dollar amounts for trades you know never executed: (1) stop the engine, (2) run `sqlite3 data/polymarket_intel.sqlite "UPDATE paper_trades SET is_live=0 WHERE is_live=1 AND kind='midpoint_scalp'"`, (3) verify with `SELECT COUNT(*) FROM paper_trades WHERE is_live=1`, (4) restart. Verify with `curl -s http://localhost:8095/api/summary | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['live_pnl_dollars'])"` → must be 0.0.
 11. **BTC 5-min resolution = Chainlink, but our engine uses Binance**: Polymarket resolves BTC 5-min markets on Chainlink BTC/USD data. Our engine uses Binance as the real-time price source (Chainlink RTDS WebSocket is dead — confirmed 2026-06-28). The resolution check `_check_market_resolution()` queries Gamma API which returns the official Chainlink-based outcome — so resolution is correct. The Binance-vs-Chainlink mismatch only affects our best-guess close in `_close_old_window_positions()`, which is always overwritten by official resolution within minutes. Before 2026-06-26 the engine used Binance for both entry AND resolution — this caused a -100% loss when Binance showed +0.14% UP but Chainlink resolved Down. The fix: use Binance for entries (only working source), Gamma API for resolution (official Chainlink outcome).
@@ -412,19 +463,29 @@ When a strategy is retired (e.g., hedging removed), BOTH the frontend and backen
 3. Add SQL exclusion in backend `/api/summary` (belt-and-suspenders)
 4. Remove from `fmtStrategy()` name mapping
 5. Remove defensive JS filters (they're no-ops without DB rows)
-6. Consider keeping a defensive filter in `updatePaperFilters()` in case old trades reappear
+
+**Partial cleanup — paper-only vs live records (2026-06-29):** When a strategy goes fully live and you want to remove paper records but keep live history, use `WHERE kind='midpoint_scalp' AND is_live=0` (not a blanket DELETE). The live records (`is_live=1`) are needed for the engine's TP checker and open-position tracking. Then filter the kind out of the UI entirely:
+- `/api/paper`: add `WHERE kind != 'midpoint_scalp'`
+- `applyPaperFilters()`: hard-filter `r.kind !== 'midpoint_scalp'` before user filters
+- `/api/summary`: add `kind != 'midpoint_scalp'` to open_paper count AND closed_trades query
+- Strategy dropdown: exclude from `updatePaperFilters()` or let the DB filter naturally handle it (no rows → no dropdown entry)
+
+**Pattern when retiring a strategy completely:**
 
 ### Architecture
 
 - **Two independent strategies**: (1) BTC 5M Directional — fades extreme market odds, (2) Midpoint Scalp — buys near $0.50, sells on small bounces. Separate sources, separate DB rows, no shared position gating.
-- **Directional (source=`crypto_5m_engine`, kind=`crypto_5m_late_directional`)**: Buys UP or DOWN based on edge when market gives our direction <25% chance. Flat 2 shares. Proportional model_up (0.50 + pct_change×100).
-- **Midpoint Scalp (source=`midpoint_scalp`, kind=`midpoint_scalp`)**: Buys tokens at $0.47-0.53 when market is uncertain. Take-profit at entry + $0.04 bid move. Holds losers to resolution (matches nj23adsknml3 pattern — no deadline bail-out). Max 3 open positions. Flat 1 share (changed from 2 on 2026-06-28 for live trading). JSONL decision log at `logs/scalp_decisions.jsonl`. Re-entry: `has_scalp_position()` prevents opening a second position while one exists, but allows re-entry after a TP close — this IS the intended scalp behavior.
+- **Directional (source=`crypto_5m_engine`, kind=`crypto_5m_late_directional`)**: Buys UP or DOWN based on edge when market gives our direction <25% chance. Flat 2 shares. Proportional model_up (0.50 + pct_change×100). **DIRECTIONAL_STOP_LOSS=0.40** (-40% mark-to-market stop-loss). The SL has TWO trigger paths: (1) **WS fast-path (primary)**: `_check_directional_sl_fastpath()` runs inside the Polymarket WS callback on EVERY orderbook tick, monitoring the OPPOSITE token's ask — when it crosses `sl_opposite = 1.0 - (entry × 0.60)`, triggers immediately. (2) **Cycle checker (fallback)**: `check_directional_stop_loss()` runs every ~1s. **Why opposite token**: the losing side crashes $0.50→$0.01 in one tick; the winning side rises $0.50→$1.00 gradually. Monitoring the opposite token catches the threshold crossing before the crash. `freeze_window()` prevents re-entry after SL. `resolve_pending_trades()` excludes `closed_stop_loss` to prevent overwrite. Full risk/reward analysis at `references/directional-stop-loss.md`.
+- **Momentum Follower (source=`momentum_follower`, kind=`momentum_follower`)**: Live (real money) BTC 5-min momentum strategy. Enters at T+45s to T+85s when BTC moves >0.05% from window start. FAK market buy at ask, holds to resolution. **Entry band**: `MOMENTUM_MIN_ENTRY=0.58` – `MOMENTUM_MAX_ENTRY=0.75` — skips markets outside this range (noise below, bad risk/reward above). **Entry price is actual Polymarket fill, not assumed ask**: `place_buy_fak()` returns `{"order_id": ..., "fill_price": actual_fill}` extracted via `_extract_fill_price()` from the FAK order response. If actual_fill differs from the assumed ask, the DB `entry_cost` is updated immediately. Logged as `[MOMENTUM] actual fill @ $0.xxx (assumed $0.yyy)`. 5 shares (Polymarket minimum). No stop-loss (risk/reward currently breakeven at 68.4% win rate — see `references/momentum-follower-analysis.md`). Config env vars: `MOMENTUM_ENABLED`, `MOMENTUM_LIVE`, `MOMENTUM_THRESHOLD`, `MOMENTUM_SHARES`, `MOMENTUM_TRIGGER_START`, `MOMENTUM_TRIGGER_END`, `MOMENTUM_MIN_ENTRY`, `MOMENTUM_MAX_ENTRY`. Resolution: same two-phase flow as directional/scalp — `_close_old_window_positions()` uses Chainlink BTC as best-guess, then `resolve_pending_trades()` corrects via Gamma API (corrected 2026-07-01: now queries `status like 'closed%'`, not just `status='open'`).\n- **Midpoint Scalp (source=`midpoint_scalp`, kind=`midpoint_scalp`)**: Buys tokens at $0.47-0.53 when market is uncertain. Take-profit via market sell only (no limit orders). Holds losers to resolution. Max 3 open positions. 5 shares (minimum required by Polymarket). JSONL decision log at `logs/scalp_decisions.jsonl`. Re-entry: `has_scalp_position()` prevents opening a second position while one exists, but allows re-entry after a TP close.
 - **1-second evaluation** (changed from 3s on 2026-06-28): `evaluate_and_act()` + `check_scalp_take_profits()` run every ~1s. Slow API calls every 5th cycle (~5s). The 1s cycle catches micro-oscillations where price crosses the $0.47/$0.53 boundary in under 3 seconds — critical for live midpoint scalping. CPU usage increase is minimal since the evaluation is fast math-only.
 - **BTC acceleration tracking**: Records `btc_halfway_price` at ~150s mark. Same direction in both halves → +5% confidence boost. Reversal → -8% penalty.
 - **Time-decay boost**: Later in window → more confidence in move. `time_factor = 1.0` at 180s → `2.0` at 60s.
 - **Entry max price (directional)**: Skip any window where entry > $0.85.
 - **65-day data retention**: `purge_old_data()` runs on startup and every ~3 hours.
 - **Window close handles both sources**: `_close_old_window_positions()` closes `crypto_5m_engine` AND `midpoint_scalp` open trades on window expiry.
+- **Engine restart strands open positions**: When the crypto container restarts, in-memory state (pending buy orders, TP tracking) is lost. Open live trades may become orphaned — their window resolves but the engine can't sell them. After any restart, check: `SELECT id, status, entry_cost, is_live FROM paper_trades WHERE source='midpoint_scalp' AND status='open'`. Manually resolve expired windows: `UPDATE paper_trades SET status='closed_resolved_loss', current_value=0.0, pnl_pct=-1.0 WHERE id=N`. Also check for stuck positions that should have been sold: if a trade is open on a window that's long past its `end_date`, force-close it.
+- **Buy fill tracking prevents premature sells**: The engine tracks each live buy order ID in `_pending_buy_orders`. Before any market sell, `check_buy_fill()` polls Polymarket for order status — only returns True when the buy is `MATCHED`. This prevents `not enough balance` errors. See `references/market-sell-fill-gating.md`.
+- **60-second grace period after restart**: In-memory `_pending_buy_orders` is empty after restart. Without a guard, `check_buy_fill()` returns True for all open positions immediately, triggering sells on positions where the buy may have never filled. `_startup_ts` set in `init()` gates this — returns False for 60s.
 
 ### Live trading — midpoint scalp only (2026-06-28, v2 SDK)
 
@@ -439,68 +500,26 @@ Module `app/live_trading.py` provides Polymarket CLOB v2 order placement via `py
 - `OrderType.GTC` enum, not string `"GTC"`
 - `PartialCreateOrderOptions(tick_size="0.01")` must be passed
 - `cancel_order(order_id)` not `cancel(order_id)`
-- `get_balance_allowance(asset_type=AssetType.COLLATERAL)` not `get_balance()` — and the asset type is `COLLATERAL`, not `USDC`
+- `get_balance_allowance(params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL, signature_type=3))` — requires params; default call (no params) returns `400 Invalid asset type`. Balance is in smallest units (6 decimals) — divide by 1e6 for USDC.
 - Market orders use `MarketOrderArgs(token_id, amount, side, order_type)` + `create_and_post_market_order()` — amount is USDC, not token count
 
 **Relayer API keys vs CLOB API keys — Polymarket UI confusion (2026-06-28):** Polymarket's Settings page labels API keys as "Relayer API Keys" in the UI, leading users to believe only relayer keys exist. These ARE the CLOB API keys — but key creation in the UI (https://polymarket.com/settings/api-keys) requires the proxy to be fully deployed first. Until the proxy is deployed, the Settings page only shows Relayer API key options. After proxy deployment, CLOB API key creation becomes available.
 
-**API key derivation — SDK bug (L1 auth always binds to EOA):** `create_or_derive_api_key()` logs a `400 "Could not create api key"` error internally but falls back to derivation successfully. The returned `ApiCreds` object works for L2 auth despite the logged error — this is cosmetic for EOA wallets but **causes order rejection for deposit wallets** (`400 maker address not allowed` / `400 the order signer address has to be the address of the API KEY`).
+**API key derivation — standard for POLY_1271:** `create_or_derive_api_key()` logs a `400 "Could not create api key"` error internally but falls back to derivation successfully. The returned `ApiCreds` object works for L2 auth despite the logged error. The API key is EOA-bound — this is CORRECT for POLY_1271 deposit wallets. The order builder (`_v2_order_signer()`) correctly uses the funder (deposit wallet) as the order signer. No monkeypatch needed.
 
-**CRITICAL — py-clob-client-v2 SDK monkeypatch for POLY_1271 L1 auth (2026-06-28):** The SDK's `create_level_1_headers()` and `sign_clob_auth_message()` always use `signer.address()` (the EOA) as `POLY_ADDRESS` and in the ClobAuth message, even when `signature_type=POLY_1271` and `funder` is set. This means the API key is ALWAYS EOA-bound regardless of signature type. Fix by monkeypatching in `live_trading.py` BEFORE client init:
+**Deposit wallet — the EOA is NOT the funder (2026-06-28, CORRECTED 2026-06-28):** Polymarket's deposit wallets use `SignatureTypeV2.POLY_1271`. The SDK is correct: L1 auth uses the EOA as `POLY_ADDRESS` (the EOA signs the ClobAuth message), and the order builder correctly sets `maker=funder` and `signer=funder` for POLY_1271 orders. No monkeypatch needed for L1 auth.
 
-```python
-# In live_trading.py init(), after imports, before ClobClient init:
-from py_clob_client_v2.headers import headers as _hdr_mod
-from py_clob_client_v2.signing import eip712 as _eip712_mod
+**CRITICAL — the deposit wallet address is DIFFERENT from the EOA.** The user's EOA (derived from private key) is `0xa5Df31bB4cDD4c94E789C6D7ac302662EE7934B9`. The deposit wallet is `0x0A47689Ab9025E1D6036856dFD52Edd588eDc7d8`. Using the EOA as the funder causes `400 the order signer address has to be the address of the API KEY` on every order.
 
-def _patched_create_l1(signer, nonce=None, timestamp=None,
-                       signature_type=None, funder=None):
-    from datetime import datetime
-    ts = timestamp if timestamp is not None else int(datetime.now().timestamp())
-    n = nonce if nonce is not None else 0
-    use_funder = (signature_type is not None
-                  and int(signature_type) == 3  # POLY_1271
-                  and funder)
-    funder_addr = funder if use_funder else None
-    # Sign ClobAuth with funder address when POLY_1271
-    actual_addr = funder_addr if funder_addr else signer.address()
-    # ... build ClobAuth(addr=actual_addr, ...) and sign ...
-    poly_addr = funder if use_funder else signer.address()
-    return {POLY_ADDRESS: poly_addr, ...}
+**How to find the deposit wallet address:** In the Polymarket web UI, click the avatar (top-right) → the dropdown shows `mellit110` with a truncated address. Click the copy icon next to the address — the copied value is the **deposit wallet address**, NOT the EOA.
 
-_hdr_mod.create_level_1_headers = _patched_create_l1
+**Complete verified fix workflow (do in order):**
 
-# Also patch ClobClient._l1_headers to pass sig_type + funder:
-ClobClient._l1_headers = lambda self, nonce=None: _patched_create_l1(
-    self.signer, nonce=nonce, timestamp=self._get_timestamp(),
-    signature_type=getattr(self.builder, 'signature_type', None),
-    funder=getattr(self.builder, 'funder', None),
-)
-```
-
-This fix alone is NOT sufficient for order placement — the proxy must ALSO be deployed (see Deposit wallet section below). The monkeypatch ensures `POLY_ADDRESS` is the funder/deposit wallet, but the backend still rejects orders if the proxy has insufficient bytecode for EIP-1271 verification.
-
-**Deposit wallet workaround (2026-06-28, UPDATED 2026-06-28):** Polymarket's deposit wallets use `SignatureTypeV2.POLY_1271`. The `create_or_derive_api_key()` method binds the API key to the EOA (private key owner), but the CLOB requires the deposit wallet address as the order signer. This causes `400 the order signer address has to be the address of the API KEY` on every order. **Root cause: the deposit wallet proxy contract is counterfactual** — it has an address but minimal bytecode (~23 bytes) until the first on-chain transaction. Without full bytecode (~250+ bytes), EIP-1271 signature verification fails.
-
-**Verified on-chain state (2026-06-28):** Proxy at `0xa5Df31bB4cDD4c94E789C6D7ac302662EE7934B9` (EOA = funder = same address for Polymarket deposit wallets) has 23 bytes of bytecode. This is insufficient — orders will fail regardless of SDK patches or API key recreation. After a successful UI trade, the proxy gains ~250 bytes and orders work.
-
-**CRITICAL — verified fix workflow (do in order):**
-
-1. **Deploy the proxy**: Place ONE small order through https://polymarket.com in your browser (with MetaMask). This deploys the proxy contract (~250 bytes) AND sets unlimited USDC allowances for the exchange contracts. Verify with:
-   ```python
-   from web3 import Web3
-   w3 = Web3(Web3.HTTPProvider('https://polygon-mainnet.g.alchemy.com/v2/demo'))  # or any Polygon RPC
-   code = w3.eth.get_code(Web3.to_checksum_address(FUNDER))
-   print(f'Proxy deployed: {len(code)} bytes')  # must be ~250+, not 23
-   ```
-2. **Delete old EOA-bound API keys**: Init ClobClient with derivation → `get_api_keys()` → `delete_api_key()` for each. Old keys bound to EOA will reject orders even after proxy deployment.
-3. **Create fresh API keys**: With the monkeypatch applied (L1 headers now use funder address), call `create_api_key()`. After proxy deployment, this succeeds and the new key is bound to the deposit wallet.
-4. **Set env vars for production** — the `init()` function checks for these first; if present, skips `create_or_derive_api_key()` entirely and builds `ApiCreds` directly:
-   ```bash
-   POLYMARKET_API_KEY=...
-   POLYMARKET_API_SECRET=...
-   POLYMARKET_API_PASSPHRASE=...
-   ```
+1. **Get the deposit wallet address**: Polymarket UI → avatar dropdown → copy icon under username → paste. This is `POLYMARKET_FUNDER`.
+2. **Set it in `.env.live`**: `POLYMARKET_FUNDER="0x0A47..."` (the deposit wallet, not the EOA).
+3. **No monkeypatch needed**: L1 auth uses EOA (correct). Order builder uses funder (correct). Remove any monkeypatch that overrides L1 `POLY_ADDRESS` to the funder.
+4. **Minimum order size**: Polymarket requires $1.00 minimum per order. At $0.47-$0.53 per share, use `SCALP_SHARES=3` (3 × $0.47 = $1.41). Set in `docker-compose.yml` crypto service env.
+5. **Balance query**: Must pass `BalanceAllowanceParams(asset_type=AssetType.COLLATERAL, signature_type=3)`. The default (no params) returns `400 Invalid asset type`.
 
 ```bash
 # .env.live additions for deposit wallets
@@ -515,7 +534,7 @@ The `init()` function checks for these env vars first; if present, skips `create
 - `init()` — Initialize `ClobClient` from env vars. Idempotent. Uses pre-created API keys if available; falls back to `create_or_derive_api_key()`. Both ClobClient instances use `SignatureTypeV2.POLY_1271` and `funder` address.
 - `place_buy_limit(token_id, price, size, trade_id)` — Place a GTC BUY limit order. Returns order ID or None on failure.
 - `place_sell_tp(token_id, price, size, trade_id)` — Place a GTC SELL limit order for TP. Tracks order ID for cancellation.
-- `place_market_sell(token_id, size, trade_id)` — Place a FOK market SELL order. Uses `MarketOrderArgs` with `amount=size` (USDC), `side=Side.SELL`, `order_type=OrderType.FOK`. Used for spike exit and near-close opportunistic exit.
+- `place_market_sell(token_id, size, trade_id, limit_price=None)` — Place a GTC SELL limit order at `limit_price` (current bid). Returns order ID or None on failure. Switched from FOK market orders (2026-06-29) — those got killed when liquidity was insufficient for all 5 shares.
 - `cancel_tp(trade_id)` — Cancel an unfilled TP order via `cancel_order()`.
 - `get_fill_status(trade_id)` — Poll exchange for TP fill. Returns `{"filled": True/False}`.
 - `log_health_heartbeat()` — Log health snapshot every 5 minutes (balance, open TPs, fill count, error/success counters).
@@ -554,17 +573,15 @@ Window expires:
 
 **Directional stays paper-only:** Lane 2 (`evaluate_lane_2()`) only calls `insert_paper_trade()` directly — no `live_trading` calls. Source=`crypto_5m_engine` never triggers real orders regardless of `LIVE_TRADING_ENABLED`.
 
-**Hybrid scalp exits (2026-06-28):** `check_scalp_take_profits()` has three exit paths:
+**Hybrid scalp exits — GTC LIMIT SELLS AT BID (2026-06-29):** `check_scalp_take_profits()` uses GTC limit sells at the current bid for all live exits. Switched from FOK market orders after discovering they get killed when liquidity is insufficient for all 5 shares (see pitfall #14 below). Three exit paths:
 
-1. **TP limit fill** (unchanged): Bid reaches `entry + SCALP_TAKE_PROFIT` → close as `closed_take_profit`
-2. **Spike exit**: Bid reaches `entry + 0.06` (above the $0.04 TP) → cancel TP limit, close as `closed_spike_market_sell` at windfall profit. Pure upside — never worse than the limit.
-3. **Near-close opportunistic exit**: T-30s before window close, bid > entry but below TP → cancel TP limit, close as `closed_opportunistic_exit` at whatever profit is available. Locks in a sure profit instead of riding to binary resolution.
+1. **TP target hit** (bid ≥ entry + $0.04): Limit sell at current bid. Only closes DB if `place_market_sell()` returns a valid order ID.
+2. **Spike exit** (bid ≥ entry + $0.06): Limit sell at current bid. Same sell-result gating.
+3. **Near-close opportunistic exit** (T-30s, bid > entry): Limit sell at current bid. Same sell-result gating.
 
-**Losers still hold to resolution**: If bid ≤ entry at T-30s, do nothing — same as before. No bail-out on losers. The near-close exit only triggers when there's profit to capture.
+**Sell-result gating (2026-06-29):** All three exit paths now check `place_market_sell()` return value before marking the DB position closed. If the sell fails (`None` return), the engine `continue`s to the next tick — the position stays open and retries. Previously, a failed sell was silently treated as a success and the DB was marked `closed_take_profit` while the shares were still live on Polymarket. See `references/market-sell-exits.md` for full exit logic.
 
-Live orders: the TP limit cancellation (`cancel_tp`) on spike/near-close exits only fires when `is_live=1`. Paper trades still get the same exit logic but without CLOB order cancellation.
-
-**Minimum capital:** With SCALP_SHARES=1 and tokens at ~$0.50, each entry deploys $0.50. With SCALP_MAX_OPEN=3, max deployed is $1.50. Recommended starting balance: $20-50.
+**Minimum capital:** With SCALP_SHARES=5 and tokens at ~$0.50, each entry deploys $2.50. With SCALP_MAX_OPEN=3, max deployed is $7.50. Recommended starting balance: $50+.
 
 **Import path pitfall:** The engine runs as `python -m app.crypto_engine` in the Docker container (workdir `/app`). The import MUST be `from app import live_trading`, not `import live_trading`. The Dockerfile copies `app/` to `/app/app/`, so `live_trading.py` lives at `/app/app/live_trading.py`.
 
@@ -766,7 +783,15 @@ See `references/polymarket-wallet-analysis.md` for the full wallet analysis meth
 
 ## References
 
+- `references/momentum-follower-analysis.md` — Momentum follower live performance analysis: 57-trade audit, risk/reward, entry price distribution, $0.75 cap impact, proposed -30% SL improvement. Added 2026-07-01.
 - `references/midpoint-scalp-strategy.md` — Midpoint scalping strategy: how it works, nj23adsknml3 actual data (corrected 2026-06-28 via predicts.guru), entry/exit logic, gas/fee analysis for real trading, and why we cannot replicate nj23's market-making approach. **2026-06-28 update**: SCALP_SHARES → 1, eval cycle → 1s, live trading module wired in.
+- `references/directional-stop-loss.md` — Directional -30% mark-to-market stop-loss: risk/reward analysis (3.55:1 → 1.06:1), implementation via `check_directional_stop_loss()`, `DIRECTIONAL_STOP_LOSS` env var, status `closed_stop_loss`. Added 2026-06-30.
+- `references/order-types.md` — Polymarket CLOB order types cheat sheet: GTC/FAK/FOK/GTD, which strategies use which, FOK-killed-silently pitfall, IOC-doesn't-exist pitfall. Added 2026-06-30.
+- `references/webui-wallet-balance.md` — Web UI real wallet balance display: health log parsing, actual vs computed P/L, SQLite WAL mode for web.py.
+- `references/market-sell-order-types.md` — CLOB market sell order types cheat sheet: FOK/FAK/GTC/GTD, IOC doesn't exist, FAK implementation, why GTC limit sells at bid are wrong for TP exits.
+- `references/market-sell-exits.md` — Market sell exit logic for midpoint scalp: why limit TP was removed, three exit paths (TP hit, spike, near-close), MarketOrderArgs implementation.
+- `references/risk-reward-analysis.md` — Midpoint scalp risk/reward analysis (2026-06-29): 50-trade audit, DOWN bleeding at 60% win rate, asymmetric sizing fix, TP increase impact math.
+- `references/market-sell-fill-gating.md` — Fill-gated market sells: why sells fail with "not enough balance" (buy hasn't matched yet), the `check_buy_fill()` polling pattern, implementation in `live_trading.py` and `crypto_engine.py`.
 - `references/live-trading-architecture.md` — Live trading module (`app/live_trading.py`): ClobClient setup, order placement flow, TP fill detection, credential management, WebSocket vs polling tradeoff, minimum capital requirements, and deployment checklist.
 - `references/live-trading-diagnostics.md` — Live trading JSONL logging: order events, health heartbeat, error counters, fill detection, log file paths, and post-deployment verification.
 - `references/polymarket-wallet-analysis.md` — Wallet analysis tools and methodology: predicts.guru checker, Polygonscan on-chain verification, Telonex dataset. How to verify wallet strategies from actual blockchain data rather than extrapolating from summaries.
@@ -776,7 +801,7 @@ See `references/polymarket-wallet-analysis.md` for the full wallet analysis meth
 - `references/strategy-retirement-filter-mismatch.md` — The 2026-06-26 hedge-removal bug: backend SQL includes retired strategy trades while frontend filters them out.
 - `references/binance-vs-chainlink-mismatch.md` — Binance vs Chainlink mismatch. Chainlink RTDS WS is DEAD as of 2026-06-28.
 - `references/vpn-proxy-setup.md` — Gluetun HTTP proxy configuration.
-- `references/py-clob-v2-monkeypatch.md` — Full monkeypatch code for the py-clob-client-v2 L1 auth bug (POLY_ADDRESS always uses EOA instead of deposit wallet). Apply in live_trading.py before client init. Necessary but not sufficient — proxy must also be deployed on-chain.
+- `references/deposit-wallet-auth-fix.md` — Complete deposit wallet auth debugging session (2026-06-28): EOA vs deposit wallet address mismatch, monkeypatch was wrong, balance query fix, minimum order size, verified working config.
 - `references/deposit-wallet-proxy.md` — Deposit wallet proxy deployment prerequisite: why the 400 signer error happens, the one-UI-trade fix, verification, and signature type cheat sheet. **2026-06-28 user-explicit correction** — this blocked live trading for the entire session.\n- `references/github-repo-setup.md` — GitHub repo setup
 - `references/crypto-engine-debugging.md` — Diagnostic workflow when crypto engine stops producing trades.
 - `references/copy-trading-architecture.md` — Copy trading probation/graduation system.

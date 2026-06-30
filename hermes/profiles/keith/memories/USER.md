@@ -4,8 +4,6 @@ Keith created his Hermes bot to explore side projects outside his DBA career, es
 §
 Keith is an Airbnb host with five properties in the Philippines and is interested in increasing revenue from those properties, potentially by hosting outside Airbnb/direct booking.
 §
-Keith has five Airbnb condominium properties on Cebu island, Philippines: four studio units and one one-bedroom condo, all near Cebu City/central areas; one is about five minutes from Mactan Airport.
-§
 Keith does not want to share credentials or secrets in chat; he prefers manual credential setup on the VPS with step-by-step instructions.
 §
-Keeps trading strategies completely separate — independent sources/tracking, no shared gating. Never mix directions in docs. Prefers step-by-step price walkthroughs. When given options, prefers a clear recommendation. Security-conscious — never put creds in git-tracked files. Polymarket: proposals first, UI verified via Playwright (390×844).
+Trading: wallet/on-chain is source of truth, never DB. DB must mirror wallet reality. Midpoint scalp: market sells only, 5-share min, hold zone T-120s (ride to resolution), no new entries in hold zone. New strategies isolated with independent P/L. Paper data deleted when going live; web UI shows live trades. Data-driven: verify live, no unsupported claims. Prefers creative math-backed ideas over param tweaks. Security: never creds in git. UI: Playwright 390×844 — curl/grep NOT evidence.

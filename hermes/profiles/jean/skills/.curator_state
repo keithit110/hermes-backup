@@ -1,9 +1,9 @@
 {
-  "last_report_path": "/root/.hermes/profiles/jean/logs/curator/20260622-022816",
-  "last_run_at": "2026-06-22T02:28:16.465843+00:00",
-  "last_run_duration_seconds": 18.403377,
+  "last_report_path": "/root/.hermes/profiles/jean/logs/curator/20260629-022918",
+  "last_run_at": "2026-06-29T02:29:18.889409+00:00",
+  "last_run_duration_seconds": 27.745452,
   "last_run_summary": "auto: no changes; llm: API call failed after 3 retries: HTTP 404: 404 Not Found",
   "last_run_summary_shown_at": null,
   "paused": false,
-  "run_count": 2
+  "run_count": 3
 }

@@ -100,33 +100,15 @@ GROUP BY event_slug
 ORDER BY net_pnl_pct;
 ```
 
-Individual leg percentages (+614% on a $0.14 hedge) are mathematically true but MEANINGLESS in isolation. The pair-level net is the only number that matters. A hedge leg that shows +614% next to a DIR leg at -100% means the pair net is ~+2% — the big percentage is an artifact of a tiny denominator.
+Individual leg percentages (+614% on a $0.14 hedge) are mathematically true but MEANINGLESS in isolation. The pair-level net is the only number that matters.
 
 ### Strategy comparison pattern (with-hedge vs without-hedge)
 
-When asked "should I do X or Y?", compute both scenarios from actual data:
-
-1. Query all closed trades grouped by slug
-2. Compute scenario A (with hedge): `SUM(dir_entry + hedge_entry)`, `SUM(dir_return + hedge_return)`
-3. Compute scenario B (directional only): `SUM(dir_entry)`, `SUM(dir_return)` — ignore hedge legs
-4. Present side-by-side in a simple table:
-
-```
-| Strategy | Deployed | Returned | Net $ | Net % |
-|----------|----------|----------|-------|-------|
-| With hedge | $36.27 | $33.00 | -$3.27 | -9.0% |
-| Dir only   | $30.62 | $30.00 | -$0.62 | -2.0% |
-```
-
-Key insight: the hedge costs money in every window where the DIR wins (hedge premium is dead money), but saves the pair in windows where the DIR loses. The net effect = `(hedge_premiums_paid) - (dir_losses_saved)`. If this is negative, the hedge is a net drain.
+When asked "should I do X or Y?", compute both scenarios from actual data, present in a simple side-by-side table with Deployed/Returned/Net $/Net %.
 
 ### Why solo DIR windows lose (and how to detect them)
 
-Solo DIR windows = no hedge could be placed because `dir_entry + min_possible_hedge > 0.98`. The market is heavily skewed against the engine's direction (market says 15-25% chance).
-
-In these windows, BTC typically moves in the engine's direction during entry (momentum) but REVERSES before window close. The engine has no structural edge — it's gambling on momentum continuation.
-
-To check: `SELECT event_slug FROM paper_trades WHERE kind LIKE 'crypto_5m%' GROUP BY event_slug HAVING COUNT(*) = 1 AND SUM(CASE WHEN pnl_pct > 0 THEN 1 ELSE 0 END) = 0`
+Solo DIR windows = no hedge could be placed because `dir_entry + min_possible_hedge > 0.98`. The market is heavily skewed against the engine's direction. BTC typically reverses before window close. No structural edge — gambling on momentum continuation.
 
 ## Scanner-engine isolation rule
 
@@ -138,59 +120,208 @@ for row in rows:
         continue  # Engine manages its own trades
 ```
 
-A conditional skip buried inside a nested if-else is NOT sufficient — it will be missed when new code paths are added above it. The skip must be the FIRST check in the loop, before any mark-to-market updates, take-profit checks, or expiry closures.
+The skip must be the FIRST check in the loop, before any mark-to-market updates, take-profit checks, or expiry closures.
 
 ## `closed_pending_final_result_sync` — resolution staleness fix
 
-**Symptom**: Copy trades (smart_wallet_copy, smart_wallet_consensus) stuck as `closed_pending_final_result_sync` for 17+ hours after the event ended. Sports events are resolved by Gamma but the scanner never syncs.
+**Symptom**: Copy trades stuck as `closed_pending_final_result_sync` for 17+ hours after event ended.
 
-**Root cause**: `sync_final_results()` queries `GET /markets?slug=X` which returns 403. The correct endpoint is `GET /events/slug/{slug}` — same endpoint the crypto engine uses successfully.
+**Root cause**: `sync_final_results()` queries `GET /markets?slug=X` which returns 403. Correct endpoint is `GET /events/slug/{slug}`.
 
-**Fix — two parts**:
+**Fix**: Use Gamma endpoint `GET /events/slug/{slug}`, parse `outcomePrices` for winner (price == 1.0). Try resolution BEFORE marking pending.
 
-1. **Query the right endpoint in `sync_final_results()`:**
+## Engine sell failures — check logs first, not design
+
+**When Keith says "the engine didn't take profit" or "it should have sold but didn't":**
+
+The FIRST diagnostic step is checking engine logs for errors:
+```bash
+docker logs polymarket-intel-crypto --since 20m 2>&1 | grep -E "FAILED|Error|error|sell_"
+```
+
+If you see repeated failures (e.g., `OrderType has no attribute 'IOC'`), that's a CODE BUG, not a design limitation. Do not explain away the behavior as "the market trended too hard" until you've confirmed zero errors. The user should never have to ask three times for you to find an error that prints 100+ times per minute.
+
+## Hold zone datetime bug — `now_utc()` aware-vs-naive silent failure
+
+**Symptom**: Hold zone configured, code in place, ZERO `[SCALP] HOLD` messages. Positions still sold at TP inside hold zone.
+
+**Root cause**: `now_utc()` returns timezone-aware datetime. `end_date` from SQLite parsed via `fromisoformat()` also timezone-aware. Original code: `end_dt.replace(tzinfo=None) - now` (naive minus aware) → TypeError, silently swallowed. `seconds_left` stayed at 300 default.
+
+**Fix**: `seconds_left = max(0, (end_dt - now).total_seconds())` — both timezone-aware. No stripping needed.
+
+**Stale pycache**: After source fix, `.pyc` in `__pycache__/` can persist old bytecode. Dockerfile must include `RUN rm -rf /app/app/__pycache__` after COPY.
+
+## Trend detector self-reinforcing cycle (verified working)
+
+The trend detector compares UP vs DOWN dollar P/L across last 6 windows. When trend=UP, only UP trades are placed → DOWN always has $0 P/L → UP always "wins" → trend stays locked. **This self-corrects naturally** — when BTC goes DOWN, UP positions lose money at resolution ($0 value), and after 4 losing UP windows the lock flips to DOWN. No probe trades needed — UP losses ARE the probe signal.
+
+## Momentum follower diagnostic
+
+When user says "momentum follower stopped making trades," FIRST check whether BTC moved enough during trigger window:
+```bash
+docker logs polymarket-intel-crypto 2>&1 | grep "MOMENTUM DBG" | tail -20
+```
+Trigger window is `MOMENTUM_TRIGGER_START=215` to `MOMENTUM_TRIGGER_END=255`. Only fires when BTC moves > `MOMENTUM_THRESHOLD` during those seconds. Quiet BTC = correct skip.
+
+## Stop-loss overwrite bug — resolution correction was overwriting closed_stop_loss (2026-06-30)
+
+**Symptom**: Directional trade hits stop-loss, shows `closed_stop_loss` status, then minutes later mysteriously changes to `closed_resolved_win` or `closed_resolved_loss`. The P/L jumps from -40% to +28% or -100%.
+
+**Root cause**: `resolve_pending_trades()` queries `status like 'closed%'` to re-resolve trades with Gamma API data. This INCLUDES `closed_stop_loss` trades. When Gamma confirms the outcome, it overwrites the SL status.
+
+**Fix**: Exclude SL'd trades from re-resolution:
 ```python
-# WRONG (returns 403):
-data = client.get_json(f"{GAMMA}/markets", params={"slug": slug, "limit": 1})
-
-# RIGHT:
-data = client.get_json(f"{GAMMA}/events/slug/{slug}")
+trades = conn.execute(
+    "select id, kind, entry_cost from paper_trades "
+    "where source='crypto_5m_engine' and event_slug=? "
+    "and status like 'closed%' and status != 'closed_stop_loss'",
+    (slug,),
+).fetchall()
 ```
 
-2. **Try resolution BEFORE marking pending in the close loop.** In `update_paper_trades()`, before setting status to `closed_pending_final_result_sync`, query Gamma for the outcome:
+## Resolution correction NEVER fired for momentum trades (2026-06-30)
+
+**Symptom**: Momentum follower trade shows as a win in DB, but Polymarket Gamma API says the opposite outcome. User's wallet lost money but DB shows profit.
+
+**Root cause — TWO bugs**:
+
+1. `_close_old_window_positions()` resolves ALL open trades (including momentum) using Chainlink BTC data as a "best guess." It marks them as `closed_resolved_win` or `closed_resolved_loss` immediately when the window changes. This is fast but can be wrong.
+
+2. `resolve_pending_trades()` is supposed to correct with Gamma API data (the truth), but only queried `status='open'` for momentum/scalp trades. By the time it runs, `_close_old_window_positions()` already changed them to `closed_resolved_*`. It NEVER found them.
+
+**Fix**: Query both open and closed trades for momentum/scalp:
 ```python
-if row["source"] in ("smart_wallet_copy", "smart_wallet_consensus"):
-    # Try to resolve from Gamma API first
-    try:
-        data = client.get_json(f"{GAMMA}/events/slug/{slug}")
-        if isinstance(data, dict) and data.get("markets"):
-            for m in data["markets"]:
-                prices = [d(x) for x in parse_jsonish(m.get("outcomePrices"))]
-                outcomes = [str(x).strip().lower() for x in parse_jsonish(m.get("outcomes"))]
-                for o, p in zip(outcomes, prices):
-                    if p >= Decimal("0.99"):
-                        winner = o
-                        break
-                if winner:
-                    won = winner == wanted.strip().lower()
-                    # Mark as closed_won/closed_lost immediately
-                    break
-    except Exception:
-        pass
-    # Only mark as pending if Gamma didn't have the result yet
-    if not resolved_directly:
-        store.conn.execute("update paper_trades set status='closed_pending_final_result_sync'...")
+# BEFORE (bug — missed trades already resolved by window-close):
+scalp_trades = conn.execute(
+    "select id, kind, entry_cost from paper_trades "
+    "where source in ('midpoint_scalp','momentum_follower') "
+    "and event_slug=? and status='open'",
+    (slug,),
+).fetchall()
+
+# AFTER (fix — catches all trades):  
+scalp_trades = conn.execute(
+    "select id, kind, entry_cost from paper_trades "
+    "where source in ('midpoint_scalp','momentum_follower') "
+    "and event_slug=? and (status='open' or status like 'closed%')",
+    (slug,),
+).fetchall()
 ```
 
-3. **Matching trades to Gamma markets:** The `event_slug` in `paper_trades` (e.g., `fifwc-ury-esp-2026-06-26-more-markets`) matches the Gamma event slug. But the individual market (e.g., "O/U 3.5 / Under") lives inside `data["markets"]` as a sub-market. Loop through all markets in the event and match on slug substring or question text.
+**Detection — manual cross-check**:
+```bash
+# Query Gamma API for a slug:
+curl -s "https://gamma-api.polymarket.com/events/slug/{slug}" | python3 -c \
+  "import json,sys;ev=json.load(sys.stdin);...print winner"
 
-4. **Retroactive fix for stuck trades:**
-```sql
--- Find them
-SELECT id, event_slug, details_json FROM paper_trades WHERE status='closed_pending_final_result_sync';
--- Query Gamma per slug, determine won/lost, update:
-UPDATE paper_trades SET status='closed_won', current_value=1.0, pnl_pct=(1.0-entry_cost)/entry_cost WHERE id=X;
-UPDATE paper_trades SET status='closed_lost', current_value=0.0, pnl_pct=-1.0 WHERE id=Y;
+# Compare to DB status:
+sqlite3 data/polymarket_intel.sqlite \
+  "SELECT id,status,details_json FROM paper_trades WHERE event_slug='{slug}'"
 ```
 
-**Key insight**: Polymarket's Gamma API has `outcomePrices` like `["1", "0"]` — the outcome with price 1.0 (≥0.99) is the winner. Sports markets resolve immediately after the game ends, even though `end_date` is midnight UTC. The scanner can resolve them immediately by checking Gamma, avoiding the `closed_pending_final_result_sync` limbo entirely.
+## Entry price — actual Polymarket fill price, not assumed ask (2026-06-30)
+
+**Symptom**: DB entry_price for momentum trades disagrees with what Polymarket actually filled at. Small discrepancies ($0.66 vs $0.67) compound into misleading P/L over many trades.
+
+**Root cause**: `place_buy_fak()` sends FAK order at the current ask, records THAT price as `entry_cost`. But Polymarket might fill at a different price (FAK takes whatever's available). We never queried the actual fill.
+
+**Fix — three parts**:
+
+1. Extract fill price from FAK order response in `live_trading.py`:
+```python
+def _extract_fill_price(result, order_id, fallback):
+    # Try response keys: avg_price, price_matched, matched_price
+    # Try fills array: sum(price * size) / sum(size)
+    # Fallback: client.get_order(order_id) for avg_price
+    return fill_price or None
+```
+
+2. `place_buy_fak()` now returns `{"order_id": ..., "fill_price": ...}` dict instead of just order_id string.
+
+3. Crypto engine updates DB when fill differs from assumed ask:
+```python
+buy_result = live_trading.place_buy_fak(token, entry_cost, shares, trade_id)
+actual_fill = buy_result.get("fill_price")
+if actual_fill and abs(actual_fill - entry_cost) > 0.001:
+    conn.execute("update paper_trades set entry_cost=? where id=?", (actual_fill, trade_id))
+```
+
+**Keith's rule**: "Polymarket is the source of truth for ALL data — not the DB. When there is ANY discrepancy, Polymarket wins. Always."
+
+## Stop-loss doesn't work in binary markets when monitoring own token's bid (2026-06-30)
+
+**Symptom**: Directional stop-loss at -40% produces -98% losses. The `closed_stop_loss` status fires, but exit price is $0.01.
+
+**Root cause**: In 5-minute BTC binary markets, the losing token's price crashes INSTANTLY:
+```
+DOWN bid: $0.50 → $0.01  (no $0.48, $0.40, $0.30 in between)
+```
+The SL check runs every ~1 second, but by the time it sees the crash, the bid is already at $0.01. The SL fires correctly but exits at a garbage price.
+
+**Fix**: Monitor the OPPOSITE (winning) token's ask instead. The winning side rises gradually:
+```
+UP ask: $0.50 → $0.52 → $0.55 → $0.60 → $0.70 → $0.85 → $1.00
+```
+When the opposite token's ask exceeds `1.0 - sl_price`, trigger the SL:
+```python
+# Entry DOWN @ $0.80, -40% SL → sl_price = $0.48, sl_opposite = $0.52
+opposite_ask = state.up_ask if side == "DOWN" else state.down_ask
+sl_opposite = 1.0 - sl_price
+if opposite_ask >= sl_opposite:
+    # UP ask crossed $0.52 → DOWN bid ~$0.48 → close at ~-40%
+```
+
+The opposite token's ask is the RELIABLE signal for when a position is underwater. Never monitor the losing token's bid alone — it vanishes in one tick.
+
+## Window re-entry after stop-loss (2026-06-30)
+
+**Symptom**: Directional trade hits stop-loss, then the engine re-enters the SAME window with a new trade. The SL position was closed but `has_open_position()` sees no open trade, so `evaluate_and_act()` enters again.
+
+**Fix**: Freeze the window when SL fires, same as the scalp near-close exit:
+```python
+# In check_directional_stop_loss(), after closing SL trade:
+freeze_window(conn, slug)  # prevent re-entry into same window
+
+# In evaluate_and_act(), before entering directional:
+if is_window_frozen(conn, event_slug):
+    return  # skip — already had an SL this window
+```
+
+The `freeze_window()` / `is_window_frozen()` pair uses `crypto_engine_state` table with key `frozen:{slug}`.
+
+## Eval gate requires Binance WS data — alternate with Chainlink (2026-06-30)
+
+**Symptom**: EVAL TIMER starts but produces zero evaluation output. No [LANE2], no [MOMENTUM], no trades. Engine is alive but silent.
+
+**Root cause**: `evaluate_and_act()` has a gate: `if btc_bid <= 0 or btc_ask <= 0: return`. If Binance WebSocket has a connection race (VPN startup, reconnect, etc.), BTC data is 0 and the eval silently returns.
+
+**Fix**: Accept Chainlink BTC/USD from Polymarket WS as a valid BTC source:
+```python
+# Use Chainlink as BTC price source when Binance WS is slow to connect
+have_btc = (btc_bid > 0 and btc_ask > 0) or state.btc_chainlink > 0
+if not have_btc:
+    return
+```
+
+The Polymarket WS already provides Chainlink BTC/USD via RTDS subscription. Use it as fallback for the eval gate.
+
+## Momentum follower performance analysis (2026-06-30)
+
+When analyzing momentum follower profitability:
+
+**Key metrics**: 57 closed live trades, 68.4% win rate, avg win +45.4%, avg loss -100%, net +$0.73 on $194.27 deployed (0.4%).
+
+**Essential breakdown — pre-cap vs post-cap**:
+- Pre-cap (IDs ≤1400, 5 trades): 1 win / 4 losses, max entry $0.94, net -$11.32 (-69%)
+- Post-cap (IDs >1400, 52 trades): 38 wins / 14 losses, max entry $0.75, net +$12.05 (+6.8%)
+
+**The $0.75 cap saved it.** Without it, the strategy was a money furnace. With it, it's breakeven.
+
+**Entry price bands (NOT monotonic)** — don't try skip bands:
+- <$0.60: 5 trades, 2/3 W/L, net -$3.45
+- $0.60-0.64: 8 trades, 7/1 W/L, net +$10.00
+- $0.65-0.67: 10 trades, 4/6 W/L, net -$11.17
+- $0.68-0.70: 10 trades, 9/1 W/L, net +$10.30
+- >$0.70: 26 trades, 19/7 W/L, net -$1.50
+
+Entry price is NOT a clean predictor. The only reliable lever is a stop-loss.

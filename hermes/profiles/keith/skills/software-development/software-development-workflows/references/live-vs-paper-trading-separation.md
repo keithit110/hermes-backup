@@ -79,10 +79,28 @@ CSS for section labels:
 Open Bets | Closed P/L % | Arb | Last Scan
 ```
 
-**Live stats** — dollars first, then percentages:
+**Live stats** — wallet-grounded, dollars only, no paper percentages:
 ```
-Live P/L $ | Live P/L % | Live Deployed | Live Returned | Live Open
+Wallet Balance | Actual P/L | Live Deployed | Live Open | DB Est P/L
 ```
+
+### Live stats are wallet-grounded, not DB-computed
+
+The DB-computed live P/L is **unreliable** — trades can be marked `is_live=1` but never actually fill on Polymarket, or fills can settle at different prices than recorded. The **only real number** is the Polymarket wallet balance.
+
+**Wallet balance source**: read from `logs/live_health.jsonl` (written by the crypto engine's health heartbeat every 60s). Parse the `balance_usdc` field (dict with `balance` key in micro-USDC) and divide by 1,000,000.
+
+**Starting balance persistence**: the wallet start balance must survive log rotation. Persist it in `crypto_engine_state` table:
+```sql
+INSERT OR REPLACE INTO crypto_engine_state(key, value) VALUES('wallet_start_balance', '46.71');
+```
+In `/api/summary`, check DB first; fall back to first health log entry only if not persisted.
+
+**Actual P/L = wallet_balance - wallet_start_balance**. This is the only truth. Return as `actual_pnl` in the API and display it prominently in red/green.
+
+**DB Est P/L**: still computed from trade records, but labeled "from trade records (not actual)" and placed last in the live stats strip — de-emphasized. Never colored red/green with the same intensity as Actual P/L.
+
+**No `live_pnl_pct`**: removed from `/api/summary` response entirely. Paper trade percentages have no place in the live section.
 
 ## Table — P/L $ column only for live trades
 
@@ -140,9 +158,13 @@ function renderLivePnL(data){
 ## Verification checklist
 
 After implementing paper/live separation:
-- [ ] `/api/summary` returns `live_deployed`, `live_returned`, `live_pnl_dollars`, `live_pnl_pct`, `open_live`
+- [ ] `/api/summary` returns `live_deployed`, `live_returned`, `live_pnl_dollars`, `open_live`, `wallet_balance`, `wallet_start_balance`, `actual_pnl`
+- [ ] `/api/summary` does NOT return `live_pnl_pct` (removed — no paper percentages in live section)
+- [ ] `wallet_start_balance` persisted in `crypto_engine_state` table (survives log rotation)
+- [ ] `actual_pnl` = `wallet_balance - wallet_start_balance` matches real Polymarket wallet change
 - [ ] Paper stats strip shows paper-only data (percentages, no dollars)
-- [ ] Live stats strip shows $0.00 across all fields when no live trades exist
+- [ ] Live stats strip shows: Wallet Balance, Actual P/L (colored), Live Deployed, Live Open, DB Est P/L (dim, labeled "not actual")
+- [ ] DB Est P/L never colored with the same red/green intensity as Actual P/L
 - [ ] P/L $ table column shows `—` for ALL rows when no live trades exist
 - [ ] "Trade Type" filter in drawer: All / Live Only / Paper Only
 - [ ] Selecting "Live Only" shows zero rows (when no live trades)
